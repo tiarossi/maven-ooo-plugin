@@ -28,13 +28,18 @@
 package org.openoffice.maven;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.model.Resource;
-import org.codehaus.plexus.util.cli.Commandline;
-import org.codehaus.plexus.util.cli.shell.Shell;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugin.logging.SystemStreamLog;
+import org.openoffice.maven.utils.ErrorReader;
 
 /**
  * Stores the Mojo configuration for use in the build visitors.
@@ -42,6 +47,8 @@ import org.codehaus.plexus.util.cli.shell.Shell;
  * @author Cedric Bosdonnat
  */
 public class ConfigurationManager {
+    
+    private static final Log log = new SystemStreamLog();
 
     /**
      * Path to the URD directory in the output directory.
@@ -66,6 +73,8 @@ public class ConfigurationManager {
     private static File sOoo;
 
     private static File sSdk;
+    
+    private static File idlDir;
 
     private static File sOutput;
 
@@ -77,6 +86,9 @@ public class ConfigurationManager {
      * @return the folder where OpenOffice.org is installed.
      */
     public static File getOOo() {
+        if (sOoo == null) {
+            sOoo = Environment.getOfficeHome();
+        }
         return sOoo;
     }
 
@@ -84,20 +96,27 @@ public class ConfigurationManager {
      * @return the OpenOffice.org <code>types.rdb</code> file path
      */
     public static String getOOoTypesFile() {
-
-        String os = System.getProperty("os.name").toLowerCase();
-        String oooTypes = new File(getOOo(), "/program/types.rdb").getPath();
-        if (os.startsWith("macos")) {
-            oooTypes = new File(getOOo(), "/Contents/MacOS/types.rdb").getPath();
+        File oooTypes = new File(getOOo(), "/program/types.rdb");
+        if (!oooTypes.exists()) {
+            oooTypes = new File(Environment.getOoSdkUreHome(), "/share/misc/types.rdb");
         }
-
-        return oooTypes;
+        return oooTypes.getPath();
     }
 
+    /**
+     * @return the OpenOffice.org <code>offapi.rdb</code> file path
+     */
+    public static String getOffapiTypesFile() {
+        return new File(Environment.getOfficeBaseHome(), "program/offapi.rdb").getPath();
+    }
+    
     /**
      * @return the folder where OpenOffice.org SDK is installed.
      */
     public static File getSdk() {
+        if (sSdk == null) {
+            sSdk = Environment.getOoSdkHome();
+        }
         return sSdk;
     }
 
@@ -126,27 +145,37 @@ public class ConfigurationManager {
     }
 
     /**
+     * Sets the idl dir.
+     *
+     * @param dir the new idl dir
+     */
+    public static synchronized void setIdlDir(File dir) {
+        idlDir = dir;
+    }
+    
+    /**
      * @return the path to the folder containing the IDL files to build or
      *         <code>null</code> if no IDL folder has been found.
      */
-    public static File getIdlDir() {
-        File idl = null;
-        if (sResources != null) {
-            idl = new File(sResources, IDL_DIR);
+    public static synchronized File getIdlDir() {
+        if (idlDir != null) {
+            return idlDir;
         }
-        return idl;
+        if (sResources != null) {
+            return new File(sResources, IDL_DIR);
+        }
+        return null;
     }
 
     /**
      * @return the path to the folder containing the IDL files to build or
      *         <code>null</code> if no IDL folder has been found.
      */
-    public static File getOxtDir() {
-        File idl = null;
+    public static synchronized File getOxtDir() {
         if (sResources != null) {
-            idl = new File(sResources, OXT_DIR);
+            return new File(sResources, OXT_DIR);
         }
-        return idl;
+        return null;
     }
 
     /**
@@ -156,7 +185,9 @@ public class ConfigurationManager {
      *            the OpenOffice.org installation folder.
      */
     public static void setOOo(File pOoo) {
+        assert pOoo != null;
         sOoo = pOoo;
+        Environment.setOfficeHome(pOoo);
     }
 
     /**
@@ -166,7 +197,9 @@ public class ConfigurationManager {
      *            the OpenOffice.org SDK installation folder.
      */
     public static void setSdk(File pSdk) {
+        assert pSdk != null;
         sSdk = pSdk;
+        Environment.setOoSdkHome(pSdk);
     }
 
     /**
@@ -177,6 +210,15 @@ public class ConfigurationManager {
      */
     public static void setOutput(File pOutput) {
         sOutput = pOutput;
+    }
+    
+    /**
+     * Gets the output.
+     *
+     * @return the output
+     */
+    public static File getOutput() {
+        return sOutput;
     }
 
     /**
@@ -199,7 +241,7 @@ public class ConfigurationManager {
      * @param pResources
      *            the project resources configuration.
      */
-    public static void setResources(List<Resource> pResources) {
+    public static synchronized void setResources(List<Resource> pResources) {
         Iterator<Resource> iter = pResources.iterator();
 
         boolean found = false;
@@ -240,36 +282,31 @@ public class ConfigurationManager {
         if (os.startsWith("windows")) {
             // Windows environment
             env = new String[1];
-            oooLibs = new File(sOoo, "/program");
+            oooLibs = new File(getOOo(), "/program");
             env[0] = "PATH=" + sdkBin + path_sep + oooLibs.getCanonicalPath();
-
             if (os.startsWith("windows 9")) {
                 cmd[0] = "command.com";
             } else {
                 cmd[0] = "cmd.exe";
             }
             cmd[1] = "/C";
-        } else if (os.startsWith("macos x")) {
+            System.arraycopy(pCommand, 0, cmd, 2, pCommand.length);
+        } else if (SystemUtils.IS_OS_MAC) {
             // MacOS environment
             env = new String[2];
-            oooLibs = new File(sOoo, "/Contents/MacOS");
-            env[0] = "PATH=" + sdkBin;
+            oooLibs = Environment.getOoSdkUreLibDir();
+            env[0] = "PATH=" + sdkBin + ":" + Environment.getOoSdkUreBinDir();
             env[1] = "DYLD_LIBRARY_PATH=" + oooLibs.getCanonicalPath();
-
-            cmd[0] = "sh";
-            cmd[1] = "-c";
+            cmd = getCmd4Unix(pCommand);
         } else {
             // *NIX environment
             env = new String[2];
-            oooLibs = new File(sOoo, "/program");
-            env[0] = "PATH=" + sdkBin;
+            oooLibs = new File(getOOo(), "/program");
+            env[0] = "PATH=" + sdkBin + ":" + Environment.getOoSdkUreBinDir();
             env[1] = "LD_LIBRARY_PATH=" + oooLibs.getCanonicalPath();
-
-            cmd[0] = "sh";
-            cmd[1] = "-c";
+            cmd = getCmd4Unix(pCommand);
         }
 
-        System.arraycopy(pCommand, 0, cmd, 2, pCommand.length);
 
         // TODO: proper way of doing it according to
         // http://docs.codehaus.org/display/MAVENUSER/Mojo+Developer+Cookbook
@@ -312,11 +349,34 @@ public class ConfigurationManager {
         b.redirectErrorStream(true);
         b.directory(sdkBin);
 
-        // System.out.println("\nRunning: [" + StringUtils.join(cmd, " ") +
-        // "] \nwith env [" + StringUtils.join(env, " ")
-        // + "] \nin dir [" + oooLibs + "]");
+         log.debug("\nRunning: [" + StringUtils.join(cmd, " ") +
+         "] \nwith env [" + StringUtils.join(env, " ")
+         + "] \nin dir [" + oooLibs + "]");
 
-        return b.start();
+        Process process = b.start();
+        check(process, cmd[2]);
+        return process;
+    }
+    
+    private static void check(Process process, String command) throws InterruptedException, Exception {
+        ErrorReader.readErrors(process.getErrorStream());
+        int status = process.waitFor();
+        if (status != 0) {
+            InputStream istream = process.getInputStream();
+            String msg = IOUtils.toString(istream);
+            throw new Exception("RC=" + status + ": " + command + "\n" + msg);
+        }
+    }
+    
+    private static String[] getCmd4Unix(String[] args) {
+        String[] cmd = new String[3];
+        cmd[0] = "sh";
+        cmd[1] = "-c";
+        cmd[2] = args[0];
+        for (int i = 1; i < args.length; i++) {
+            cmd[2] += " " + args[i];
+        }
+        return cmd;
     }
 
     /**
@@ -348,12 +408,13 @@ public class ConfigurationManager {
             } else {
                 path = "/solintel/bin";
             }
-        } else if (os.equals("macos x")) {
-            path = "/macosx/bin";
+        } else if (SystemUtils.IS_OS_MAC) {
+            path = "/bin";
         } else {
             path = "/linux/bin";
         }
 
         return new File(pHome, path);
     }
+    
 }

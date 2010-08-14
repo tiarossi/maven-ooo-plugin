@@ -21,6 +21,8 @@ import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
@@ -34,6 +36,8 @@ import java.io.File;
  * @version $Id: AbstractJarMojo.java 611327 2008-01-11 23:15:17Z dennisl $
  */
 public abstract class AbstractOxtMojo extends AbstractMojo {
+    
+    private static final Log log = new SystemStreamLog();
 
     private static final String[] DEFAULT_EXCLUDES = new String[] { "**/package.html" };
 
@@ -177,12 +181,14 @@ public abstract class AbstractOxtMojo extends AbstractMojo {
         File jarFile = getJarFile(outputDirectory, finalName, getClassifier());
 
         MavenArchiver archiver = new MavenArchiver();
+        assert jarArchiver != null;
         archiver.setArchiver(jarArchiver);
         archiver.setOutputFile(jarFile);
         archive.setForced(forceCreation);
 
         try {
             File contentDirectory = getClassesDirectory();
+            assert contentDirectory != null;
             if (!contentDirectory.exists()) {
                 getLog().warn("JAR will be empty - no content was marked for inclusion!");
             } else {
@@ -190,12 +196,15 @@ public abstract class AbstractOxtMojo extends AbstractMojo {
             }
 
             File existingManifest = getDefaultManifestFile();
+            assert existingManifest != null;
 
             if (useDefaultManifestFile && existingManifest.exists() && archive.getManifestFile() == null) {
                 getLog().info("Adding existing MANIFEST to archive. Found under: " + existingManifest.getPath());
                 archive.setManifestFile(existingManifest);
             }
 
+            assert project.getArtifact() != null;
+            log.debug("createArchive(..) with project " + project);
             archiver.createArchive(project, archive);
 
             return jarFile;
