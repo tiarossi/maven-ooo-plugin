@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.maven.model.Resource;
+import org.codehaus.plexus.util.cli.Commandline;
+import org.codehaus.plexus.util.cli.shell.Shell;
 
 /**
  * Stores the Mojo configuration for use in the build visitors.
@@ -233,7 +235,7 @@ public class ConfigurationManager {
         String[] cmd = new String[2 + pCommand.length];
         File oooLibs;
 
-        String sdkBin = getSdkBinPath(sSdk.getPath());
+        File sdkBin = getSdkBinPath(sSdk.getPath());
 
         if (os.startsWith("windows")) {
             // Windows environment
@@ -308,6 +310,7 @@ public class ConfigurationManager {
             }
         }
         b.redirectErrorStream(true);
+        b.directory(sdkBin);
 
         // System.out.println("\nRunning: [" + StringUtils.join(cmd, " ") +
         // "] \nwith env [" + StringUtils.join(env, " ")
@@ -324,14 +327,14 @@ public class ConfigurationManager {
      *            the OpenOffice.org SDK home
      * @return the full path to the SDK binaries
      */
-    private static String getSdkBinPath(String pHome) {
+    private static File getSdkBinPath(String pHome) {
         String path = null;
 
         // OOo SDK does not seems to include th target os in their packaging
         // anymore. Tested with 3.2.0
         path = "/bin";
         if (new File(pHome, path).exists())
-            return new File(pHome, path).getPath();
+            return new File(pHome, path);
 
         // Get the OS and Architecture properties
         String os = System.getProperty("os.name").toLowerCase();
@@ -351,6 +354,6 @@ public class ConfigurationManager {
             path = "/linux/bin";
         }
 
-        return new File(pHome, path).getPath();
+        return new File(pHome, path);
     }
 }
