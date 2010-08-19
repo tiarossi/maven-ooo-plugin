@@ -28,12 +28,9 @@
 package org.openoffice.maven.packager;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openoffice.maven.ConfigurationManager;
 import org.openoffice.plugin.core.model.UnoPackage;
@@ -54,19 +51,9 @@ public class OxtMojo extends AbstractOxtMojo {
     private List<Artifact> attachedArtifacts;
 
     /**
-     * This is where the resources are located.
-     * 
-     * @parameter expression="${project.resources}"
-     * @required
-     * @readonly
-     */
-    private List<Resource> resources;
-
-    /**
      * OOo instance to build the extension against.
      * 
      * @parameter
-     * @required
      */
     private File ooo;
 
@@ -74,9 +61,15 @@ public class OxtMojo extends AbstractOxtMojo {
      * OOo SDK installation where the build tools are located.
      * 
      * @parameter
-     * @required
      */
     private File sdk;
+
+    /**
+     * OXT directory where the OXT sources can be found
+     * 
+     * @parameter expression="src/main/resources"
+     */
+    private File oxtDir;
 
     /**
      * This is where build results go.
@@ -144,17 +137,15 @@ public class OxtMojo extends AbstractOxtMojo {
         super.execute();
 
         // build the oxt package
-        ConfigurationManager.setOOo(ooo);
+        ooo = ConfigurationManager.initOOo(ooo);
         getLog().info("OpenOffice.org used: " + ooo.getAbsolutePath());
-        ConfigurationManager.setSdk(sdk);
+        sdk = ConfigurationManager.initSdk(sdk);
         getLog().info("OpenOffice.org SDK used: " + sdk.getAbsolutePath());
         ConfigurationManager.setOutput(directory);
         ConfigurationManager.setClassesOutput(outputDirectory);
-        ConfigurationManager.setResources(resources);
 
-        File oxtDir = ConfigurationManager.getOxtDir();
         if (oxtDir == null) {
-            throw new MojoExecutionException("No OXT folder found among in the resources");
+            throw new MojoExecutionException("No OXT folder configured");
         }
 
         File oxtFile = new File(outputDirectory, finalName + ".oxt");
@@ -168,7 +159,7 @@ public class OxtMojo extends AbstractOxtMojo {
             }
         }
 
-        pkg.addContent(null, oxtDir);
+        pkg.addDirectory(oxtDir, this.getIncludes(), this.getExcludes());
         
         if (pkg.close() == null) {
             getLog().error("OXT Package Build failed");
@@ -180,7 +171,7 @@ public class OxtMojo extends AbstractOxtMojo {
             getProject().getArtifact().setFile(oxtFile);
         }
 
-        getLog().warn("OxtMojo not coded yet...");
+        getLog().warn("OxtMojo not finished yet...");
     }
 
 }

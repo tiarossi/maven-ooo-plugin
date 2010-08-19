@@ -46,13 +46,10 @@ package org.openoffice.maven.idl;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.text.MessageFormat;
-import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.*;
 import org.openoffice.maven.ConfigurationManager;
-import org.openoffice.maven.Environment;
 import org.openoffice.maven.utils.VisitableFile;
 
 /**
@@ -86,15 +83,6 @@ public class IdlBuilderMojo extends AbstractMojo {
     private File directory;
 
     /**
-     * This is where the resources are located.
-     *
-     * @parameter expression="${project.resources}"
-     * @required
-     * @readonly
-     */
-    private List<Resource> resources;
-
-    /**
      * This is where compiled classes go.
      *
      * @parameter expression="${project.build.outputDirectory}"
@@ -120,7 +108,7 @@ public class IdlBuilderMojo extends AbstractMojo {
     /**
      * IDL directory where the IDL sources can be found
      * 
-     * @parameter expression="src/main/idl"
+     * @parameter expression="src/main/resources"
      */
     private File idlDir;
 
@@ -144,26 +132,17 @@ public class IdlBuilderMojo extends AbstractMojo {
                                  MojoFailureException {
 
         try {
-            if (ooo == null) {
-                ooo = Environment.getOfficeHome();
-            }
-            ConfigurationManager.setOOo(ooo);
-            getLog().info("OpenOffice.org used: " + 
-                    ooo.getAbsolutePath());
+            ooo = ConfigurationManager.initOOo(ooo);
+            getLog().info("OpenOffice.org used: " + ooo.getAbsolutePath());
 
-            if (sdk == null) {
-                sdk = Environment.getOoSdkHome();
-            }
-            ConfigurationManager.setSdk(sdk);
-            getLog().info("OpenOffice.org SDK used: " + 
-                    sdk.getAbsolutePath());
+            sdk = ConfigurationManager.initSdk(sdk);
+            getLog().info("OpenOffice.org SDK used: " + sdk.getAbsolutePath());
             
             ConfigurationManager.setIdlDir(idlDir);
             getLog().info("idlDir used: " + idlDir.getAbsolutePath());
 
             ConfigurationManager.setOutput(directory);
             ConfigurationManager.setClassesOutput(outputDirectory);
-            ConfigurationManager.setResources(resources);
             
             // Check if the IDL folder is present
             File idlDir = ConfigurationManager.getIdlDir();

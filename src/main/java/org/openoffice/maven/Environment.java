@@ -66,7 +66,9 @@ public final class Environment {
         } else if (SystemUtils.IS_OS_MAC) {
             home = tryDirs("/Applications/OpenOffice.org.app", "/opt/ooo/OpenOffice.org.app");
         } else if (SystemUtils.IS_OS_WINDOWS) {
-            home = tryDirs("C:/programs/OpenOffice.org3", "C:/Programme/OpenOffice.org3");
+            home = tryDirs("C:/programs/OpenOffice.org3", "C:/Programme/OpenOffice.org3",
+                    "C:/programs/OpenOffice.org 3", "C:/Programme/OpenOffice.org 3",
+                    "C:/Program Files (x86)/OpenOffice.org 3");
         } else {
             home = tryDirs("/opt/openoffice.org3");
         }
@@ -85,6 +87,10 @@ public final class Environment {
             home = tryDirs("/opt/openoffice.org/basis3.2/sdk", "/usr/lib/openoffice/basis3.2/sdk");
         } else if (SystemUtils.IS_OS_MAC) {
             home = tryDirs("/Applications/OpenOffice.org3.2_SDK", "/opt/ooo/OpenOffice.org3.2_SDK");
+        } else if (SystemUtils.IS_OS_WINDOWS) {
+            home = tryDirs(officeHome + "/Basis/sdk", "C:/sdk/OpenOffice.org_3.2_SDK/sdk");
+        } else {
+            home = tryDirs(new File(officeHome, "Basis/sdk"), new File("/opt/openoffice.org/basis3.2/sdk"));
         }
         if (home == null) {
             log.debug("SDK home not found - must be set via configuration '<sdk>...</sdk>'");
@@ -97,6 +103,15 @@ public final class Environment {
             File dir = new File(dirnames[i]);
             if (dir.isDirectory()) {
                 return dir;
+            }
+        }
+        return null;
+    }
+
+    private static File tryDirs(final File... dirs) {
+        for (int i = 0; i < dirs.length; i++) {
+            if (dirs[i].isDirectory()) {
+                return dirs[i];
             }
         }
         return null;
