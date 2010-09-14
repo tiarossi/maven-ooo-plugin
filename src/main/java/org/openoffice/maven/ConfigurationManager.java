@@ -28,15 +28,14 @@
 package org.openoffice.maven;
 
 import java.io.File;
-import java.io.InputStream;
-import java.util.Map;
+import java.util.Properties;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
-import org.openoffice.maven.utils.ErrorReader;
+import org.codehaus.plexus.util.cli.*;
+import org.openoffice.maven.utils.FileFinder;
 
 /**
  * Stores the Mojo configuration for use in the build visitors.
@@ -45,7 +44,7 @@ import org.openoffice.maven.utils.ErrorReader;
  */
 public class ConfigurationManager {
     
-    private static final Log log = new SystemStreamLog();
+    private static Log log = new SystemStreamLog();
 
     /**
      * Path to the URD directory in the output directory.
@@ -71,6 +70,25 @@ public class ConfigurationManager {
     private static File sOutput;
 
     private static File sClassesOutput;
+    
+    /**
+     * We want to use the same Log stream as the Mojos in this project.
+     * So you can set it here.
+     * 
+     * @param mojoLog the new Log
+     */
+    public static void setLog(Log mojoLog) {
+        log = mojoLog;
+    }
+    
+    /**
+     * Gets the log.
+     *
+     * @return the log
+     */
+    public static Log getLog() {
+        return log;
+    }
 
     /**
      * @return the folder where OpenOffice.org is installed.
@@ -112,9 +130,11 @@ public class ConfigurationManager {
      * @return the OpenOffice.org <code>types.rdb</code> file path
      */
     public static String getOOoTypesFile() {
-        File oooTypes = new File(getOOo(), "/program/types.rdb");
-        if (!oooTypes.exists()) {
-            oooTypes = new File(Environment.getOoSdkUreHome(), "/share/misc/types.rdb");
+        File oooTypes = FileFinder.tryFiles(new File(getOOo(), "/program/types.rdb"),
+                new File(Environment.getOoSdkUreHome(), "/share/misc/types.rdb"),
+                new File(Environment.getOoSdkUreHome(), "/misc/types.rdb"));
+        if (oooTypes == null) {
+            throw new RuntimeException("types.rdb not found");
         }
         return oooTypes.getPath();
     }
@@ -238,125 +258,6 @@ public class ConfigurationManager {
         sClassesOutput = pOutputDirectory;
     }
 
-    public static Process runTool(String pCommand) throws Exception {
-        return runTool(new String[] { pCommand });
-    }
-
-    public static Process runTool(String pCommand, String args) throws Exception {
-        return runTool(new String[] { pCommand, args });
-    }
-
-    public static Process runTool(String[] pCommand) throws Exception {
-
-        String os = System.getProperty("os.name").toLowerCase();
-        String pathSep = System.getProperty("path.separator");
-
-        String[] env = new String[0];
-        String[] cmd = new String[2 + pCommand.length];
-        File oooLibs;
-
-        File sdkBin = getSdkBinPath(sSdk.getPath());
-
-        if (os.startsWith("windows")) {
-            // Windows environment
-            env = new String[1];
-            oooLibs = new File(getOOo(), "/program");
-            env[0] = "PATH=" + sdkBin + pathSep + Environment.getOoSdkUreBinDir() + pathSep
-                    + oooLibs.getCanonicalPath();
-            if (os.startsWith("windows 9")) {
-                cmd[0] = "command.com";
-            } else {
-                cmd[0] = "cmd.exe";
-            }
-            cmd[1] = "/C";
-            System.arraycopy(pCommand, 0, cmd, 2, pCommand.length);
-        } else if (SystemUtils.IS_OS_MAC) {
-            // MacOS environment
-            env = new String[2];
-            oooLibs = Environment.getOoSdkUreLibDir();
-            env[0] = "PATH=" + sdkBin + pathSep + Environment.getOoSdkUreBinDir();
-            env[1] = "DYLD_LIBRARY_PATH=" + oooLibs.getCanonicalPath();
-            cmd = getCmd4Unix(pCommand);
-        } else {
-            // *NIX environment
-            env = new String[2];
-            oooLibs = new File(getOOo(), "/program");
-            env[0] = "PATH=" + sdkBin + pathSep + Environment.getOoSdkUreBinDir();
-            env[1] = "LD_LIBRARY_PATH=" + oooLibs.getCanonicalPath();
-            cmd = getCmd4Unix(pCommand);
-        }
-
-
-        // TODO: proper way of doing it according to
-        // http://docs.codehaus.org/display/MAVENUSER/Mojo+Developer+Cookbook
-        //
-        // Commandline cl = new Commandline("command");
-        // cl.addArguments( new String[] { "arg1", "arg2", "arg3" } );
-        // StreamConsumer output = new CommandLineUtils.StringStreamConsumer();
-        // StreamConsumer error = new CommandLineUtils.StringStreamConsumer();
-        // int returnValue = CommandLineUtils.executeCommandLine(cl, output,
-        // error);
-
-        // Create the process
-        ProcessBuilder b = new ProcessBuilder(cmd);
-        // copy pasted from ProcessBuilder.environment(String[])
-        Map<String, String> e = b.environment();
-        for (String envstring : env) {
-            if (envstring.indexOf('\u0000') != -1)
-                envstring = envstring.replaceFirst("\u0000.*", "");
-
-            int eqlsign = envstring.indexOf('=', 1);
-            if (eqlsign != -1) {
-                String key = envstring.substring(0, eqlsign);
-                String value = envstring.substring(eqlsign + 1);
-                if ("path".equalsIgnoreCase(key)) {
-                    if (os.startsWith("windows")) {
-                        // for windows, path env var is not case sensitive.
-                        for (String k : e.keySet()) {
-                            if ("path".equalsIgnoreCase(k)) {
-                                key = k;
-                                break;
-                            }
-                        }
-                    }
-                    e.put(key, e.get(key) + pathSep + value);
-                } else {
-                    e.put(key, value);
-                }
-            }
-        }
-        b.redirectErrorStream(true);
-        b.directory(sdkBin);
-
-         log.debug("\nRunning: [" + StringUtils.join(cmd, " ") +
-         "] \nwith env [" + StringUtils.join(env, " ") + "]");
-
-        Process process = b.start();
-        check(process, cmd[2]);
-        return process;
-    }
-    
-    private static void check(Process process, String command) throws InterruptedException, Exception {
-        ErrorReader.readErrors(process.getErrorStream());
-        int status = process.waitFor();
-        if (status != 0) {
-            InputStream istream = process.getInputStream();
-            String msg = IOUtils.toString(istream);
-            throw new Exception("RC=" + status + ": " + command + "\n" + msg);
-        }
-    }
-    
-    private static String[] getCmd4Unix(String[] args) {
-        String[] cmd = new String[3];
-        cmd[0] = "sh";
-        cmd[1] = "-c";
-        cmd[2] = args[0];
-        for (int i = 1; i < args.length; i++) {
-            cmd[2] += " " + args[i];
-        }
-        return cmd;
-    }
-
     /**
      * Returns the path to the SDK binaries depending on the OS and the
      * architecture.
@@ -365,22 +266,21 @@ public class ConfigurationManager {
      *            the OpenOffice.org SDK home
      * @return the full path to the SDK binaries
      */
-    private static File getSdkBinPath(String pHome) {
-        String path = null;
-
-        // OOo SDK does not seems to include th target os in their packaging
+    private static String getSdkBinPath() {
+        File sdkHome = Environment.getOoSdkHome();
+        // OOo SDK does not seem to include the target os in their packaging
         // anymore. Tested with 3.2.0
-        path = "/bin";
-        if (new File(pHome, path).exists())
-            return new File(pHome, path);
+        String path = "/bin";
+        if (new File(sdkHome, path).exists()) {
+            return new File(sdkHome, path).getPath();
+        }
 
-        // Get the OS and Architecture properties
-        String os = System.getProperty("os.name").toLowerCase();
+        // Get the Architecture properties
         String arch = System.getProperty("os.arch").toLowerCase();
 
-        if (os.startsWith("windows")) {
+        if (SystemUtils.IS_OS_WINDOWS) {
             path = "/windows/bin/";
-        } else if (os.equals("solaris")) {
+        } else if (SystemUtils.IS_OS_SOLARIS) {
             if (arch.equals("sparc")) {
                 path = "/solsparc/bin";
             } else {
@@ -392,7 +292,94 @@ public class ConfigurationManager {
             path = "/linux/bin";
         }
 
-        return new File(pHome, path);
+        return new File(sdkHome, path).getPath();
+    }
+    
+    /**
+     * Returns the path to the OOO binaries depending on the OS and the
+     * architecture.
+     * 
+     * @return the full path to the OOo binaries
+     */
+    private static String getOOoBinPath() {
+        File oooHome = Environment.getOfficeHome();
+        File binDir = new File(oooHome, "program");
+        if (SystemUtils.IS_OS_MAC) {
+            binDir = new File(oooHome, "Contents/MacOS");
+        }
+        return binDir.getAbsolutePath();
+    }
+    
+    /**
+     * Run command.
+     * See {@link "http://docs.codehaus.org/display/MAVENUSER/Mojo+Developer+Cookbook"}.
+     *
+     * @param cmd the command
+     * @return the exit code of the command
+     * @throws CommandLineException the command line exception
+     */
+    public static int runCommand(final String cmd) throws CommandLineException {
+        Commandline cl = new Commandline(cmd);
+        return runCommand(cl);
+    }
+
+    /**
+     * Run command.
+     * See {@link "http://docs.codehaus.org/display/MAVENUSER/Mojo+Developer+Cookbook"}.
+     *
+     * @param cmd the command
+     * @param args the args
+     * @return the exit code of the command
+     * @throws CommandLineException the command line exception
+     */
+    public static int runCommand(final String cmd, final String... args) throws CommandLineException {
+        Commandline cl = new Commandline(cmd);
+        cl.addArguments(args);
+        return runCommand(cl);
+    }
+
+    private static int runCommand(Commandline cl) throws CommandLineException {
+        try {
+            setUpEnvironmentFor(cl);
+        } catch (Exception e) {
+            log.warn("can't setup environment for '" + cl + "' - will try without environment...");
+        }
+        CommandLineUtils.StringStreamConsumer output = new CommandLineUtils.StringStreamConsumer();
+        CommandLineUtils.StringStreamConsumer error = new CommandLineUtils.StringStreamConsumer();
+        int returnValue = CommandLineUtils.executeCommandLine(cl, output, error);
+        String outmsg = output.getOutput().trim();
+        if (StringUtils.isNotEmpty(outmsg)) {
+            log.info(outmsg);
+        }
+        String errmsg = error.getOutput().trim();
+        if (StringUtils.isNotEmpty(errmsg)) {
+            log.warn(errmsg);
+        }
+        log.info("'" + cl + "' returned with " + returnValue);
+        return returnValue;
+    }
+    
+    private static void setUpEnvironmentFor(final Commandline cl) throws Exception {
+        cl.addSystemEnvironment();
+        Properties envVars = cl.getSystemEnvVars();
+        String path = envVars.getProperty("PATH", "");
+        String pathSep = System.getProperty("path.separator", ":");
+        path = getSdkBinPath() + pathSep + getOOoBinPath() + pathSep + Environment.getOoSdkUreBinDir() + pathSep + path;        
+        cl.addEnvironment("PATH", path);
+        //log.debug("PATH=" + path);
+        String oooLibs = Environment.getOoSdkUreLibDir().getCanonicalPath();
+        if (SystemUtils.IS_OS_WINDOWS) {
+            // I'm not sure if this works / is necessary
+            cl.addEnvironment("DLLPATH", oooLibs);
+            //log.debug("DLLPATH=" + oooLibs);
+        } else if (SystemUtils.IS_OS_MAC) {
+            cl.addEnvironment("DYLD_LIBRARY_PATH", oooLibs);
+            //log.debug("DYLD_LIBRARY_PATH=" + oooLibs);
+        } else {
+            // *NIX environment
+            cl.addEnvironment("LD_LIBRARY_PATH", oooLibs);
+            //log.debug("LD_LIBRARY_PATH=" + oooLibs);
+        }
     }
     
 }

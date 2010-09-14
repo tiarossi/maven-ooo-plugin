@@ -27,11 +27,11 @@ package org.openoffice.maven;
 import static org.junit.Assert.*;
 
 import java.io.File;
-import java.io.InputStream;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugin.logging.SystemStreamLog;
+import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.codehaus.plexus.util.cli.CommandLineException;
 import org.junit.Test;
 
 
@@ -43,7 +43,7 @@ import org.junit.Test;
  */
 public final class ConfigurationManagerTest extends AbstractTest {
     
-    private static final Log log = new SystemStreamLog();
+    private static final Log log = LogFactory.getLog(ConfigurationManagerTest.class);
     
 //    /**
 //     * The path to OpenOffice home is set up here. At the moment this is
@@ -84,39 +84,72 @@ public final class ConfigurationManagerTest extends AbstractTest {
         assertTrue(idlDir + " is no directory", idlDir.isDirectory());
     }
     
-    /**
-     * Test method for {@link ConfigurationManager#runTool(String)}.
-     */
-    @Test
-    public synchronized void testRunTool() throws Exception {
-        Process process = ConfigurationManager.runTool("date");
-        assertEquals(0, process.waitFor());
-    }
+//    /**
+//     * Test method for {@link ConfigurationManager#runTool(String)}.
+//     * Because it does not run on Windows (I think the date command
+//     * waits here for input) the test can be deactivated.
+//     */
+//    @Test
+//    public synchronized void testRunTool() throws Exception {
+//        Process process = ConfigurationManager.runTool("date");
+//        assertEquals(0, process.waitFor());
+//    }
     
     /**
-     * Test method for {@link ConfigurationManager#runTool(String)}.
+     * Test method for {@link ConfigurationManager#runCommand(String)}.
      */
     @Test
-    public synchronized void testRunIdlc() throws Exception {
+    public synchronized void testRunCommand() throws CommandLineException {
+        String command = SystemUtils.IS_OS_WINDOWS ? "dir" : "date";
+        log.info("running " + command + "...");
+        int ret = ConfigurationManager.runCommand(command);
+        assertEquals(0, ret);
+    }
+    
+//    /**
+//     * Test method for {@link ConfigurationManager#runTool(String)}.
+//     */
+//    @Test
+//    public synchronized void testRunIdlc() throws Exception {
+//        log.info("running 'idcl -h'...");
+//        Process process = ConfigurationManager.runTool("idlc", "-h");
+//        InputStream istream = process.getInputStream();
+//        log.info(IOUtils.toString(istream));
+//        assertEquals(0, process.waitFor());
+//    }
+
+    /**
+     * Test method for {@link ConfigurationManager#runCommand(String...)}.
+     */
+    @Test
+    public synchronized void testRunIdlcCommand() throws Exception {
         log.info("running 'idcl -h'...");
-        Process process = ConfigurationManager.runTool("idlc", "-h");
-        InputStream istream = process.getInputStream();
-        log.info(IOUtils.toString(istream));
-        assertEquals(0, process.waitFor());
+        int ret = ConfigurationManager.runCommand("idlc", "-h");
+        assertEquals(0, ret);
     }
 
     /**
-     * Test method for {@link ConfigurationManager#runTool(String)}.
+     * Test to see if "regmerge" works.
+     *
+     * @throws CommandLineException the command line exception
      */
     @Test
-    public synchronized void testRunRegmerge() {
+    public synchronized void testRunRegmerge() throws CommandLineException {
         log.info("running 'regmerge -h'...");
-        try {
-            ConfigurationManager.runTool("regmerge", "-h");
-        } catch (Exception e) {
-            String msg = e.getMessage();
-            assertTrue(msg, msg.contains("unknown option"));
-        }
+        ConfigurationManager.runCommand("regmerge", "-h");
+    }
+
+    /**
+     * Test method for {@link ConfigurationManager#runCommand(String)} with the
+     * unopkg command. 'unopkg' is normally placed in the search path of OOo
+     * (and not the OOo SDK).
+     * 
+     * @throws CommandLineException the command line exception
+     */
+    @Test
+    public synchronized void testRunUnopkg() throws CommandLineException {
+        log.info("running 'unopkg -V'...");
+        ConfigurationManager.runCommand("unopkg", "-V");
     }
 
 }

@@ -1,13 +1,8 @@
 package org.openoffice.maven.installer;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStreamReader;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.*;
 import org.apache.maven.project.MavenProject;
 import org.openoffice.maven.ConfigurationManager;
 
@@ -17,7 +12,7 @@ import org.openoffice.maven.ConfigurationManager;
  * @phase install
  */
 public class OOoInstalMojo extends AbstractMojo {
-
+    
     /**
      * The Maven project.
      * 
@@ -31,7 +26,6 @@ public class OOoInstalMojo extends AbstractMojo {
      * OOo instance to build the extension against.
      * 
      * @parameter
-     * @required
      */
     private File ooo;
 
@@ -39,7 +33,6 @@ public class OOoInstalMojo extends AbstractMojo {
      * OOo SDK installation where the build tools are located.
      * 
      * @parameter
-     * @required
      */
     private File sdk;
 
@@ -55,11 +48,11 @@ public class OOoInstalMojo extends AbstractMojo {
      *             if the packaging can't be done.
      */
     public void execute() throws MojoExecutionException, MojoFailureException {
-        ConfigurationManager.setOOo(ooo);
-        getLog().debug("OpenOffice.org used: " + ooo.getAbsolutePath());
+        ooo = ConfigurationManager.initOOo(ooo);
+        getLog().info("OpenOffice.org used: " + ooo.getAbsolutePath());
 
-        ConfigurationManager.setSdk(sdk);
-        getLog().debug("OpenOffice.org SDK used: " + sdk.getAbsolutePath());
+        sdk = ConfigurationManager.initSdk(sdk);
+        getLog().info("OpenOffice.org SDK used: " + sdk.getAbsolutePath());
 
         File unoPluginFile = project.getArtifact().getFile();
         if (!unoPluginFile.exists()) {
@@ -71,43 +64,13 @@ public class OOoInstalMojo extends AbstractMojo {
             String unopkg = "unopkg";
             if (os.startsWith("windows"))
                 unopkg = "unopkg.com";
-            String[] cmd = new String[] { unopkg, //
-                            "add", //
-                            "-f", //
-                            unoPluginFile.getCanonicalPath(), //
-            };
 
             getLog().info("Installing plugin to OOo... please wait");
-            Process process = ConfigurationManager.runTool(cmd);
-            String message = "";
-            { // read std input
-                BufferedReader buffer = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                String line = buffer.readLine();
-                while (null != line) {
-                    message += line + "\n";
-                    line = buffer.readLine();
-                }
-                if (message.length() > 0)
-                    getLog().info(message);
-                buffer = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-                line = buffer.readLine();
-                while (null != line) {
-                    message += line + "\n";
-                    line = buffer.readLine();
-                }
-                if (message.length() > 0)
-                    getLog().info(message);
-            }
-
-            int returnCode = process.waitFor();
-            boolean success = returnCode == 0;
-
-            if (success) {
+            int returnCode = ConfigurationManager.runCommand(unopkg, "add", "-f", unoPluginFile.getCanonicalPath());
+            if (returnCode == 0) {
                 getLog().info("Plugin installed successfully");
             } else {
-                System.out.println("\nRunning: [" + StringUtils.join(cmd, " ") + "]");
-                throw new MojoExecutionException("unopkg renurned in error. Code: " + returnCode + "\n" + //
-                        message);
+                throw new MojoExecutionException("'unopkg add -f " + unoPluginFile + "' returned with " + returnCode);
             }
         } catch (Exception e) {
             throw new MojoExecutionException("Error while installing package to OOo.", e);

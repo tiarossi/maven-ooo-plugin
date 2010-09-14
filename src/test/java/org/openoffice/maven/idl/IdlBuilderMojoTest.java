@@ -51,7 +51,7 @@ public final class IdlBuilderMojoTest extends AbstractMojoTest {
     protected void setUp() throws Exception {
         super.setUp();
         this.mojo = new IdlBuilderMojo();
-        this.setUpMojo();
+        this.setUpTargetDir();
     }
 
     /**
@@ -64,6 +64,7 @@ public final class IdlBuilderMojoTest extends AbstractMojoTest {
      */
     public void testMojoGoal() throws Exception {
         File testPom = new File(getBasedir(), "src/main/resources/archetype-resources/pom.xml");
+        assertTrue(testPom + " is not a file", testPom.isFile());
         IdlBuilderMojo mojo = (IdlBuilderMojo) lookupMojo("build-idl", testPom);
         assertNotNull(mojo);
     }
@@ -90,9 +91,14 @@ public final class IdlBuilderMojoTest extends AbstractMojoTest {
      */
     public void testExecute() throws IllegalAccessException, MojoExecutionException, MojoFailureException, IOException {
         setUpIdlDir();
-        File buildDir = this.getTargetDir();
+        File buildDir = getTargetDir();
+        File oooBuildDir = new File(buildDir, "ooo");
+        FileUtils.deleteDirectory(oooBuildDir);
+        assertFalse(oooBuildDir + " can't be deleted", oooBuildDir.exists());
         FileUtils.copyFile(new File("src/test/resources/types.rdb"), new File(buildDir, "types.rdb"));
         mojo.execute();
+        File expectedClassFile = new File(oooBuildDir, "hello/WorldInterface.class");
+        assertTrue(expectedClassFile + " was not created", expectedClassFile.exists());
     }
 
     private void setUpIdlDir() throws IllegalAccessException {

@@ -45,10 +45,12 @@ package org.openoffice.maven.idl;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.text.MessageFormat;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.*;
+import org.codehaus.plexus.util.cli.CommandLineException;
+import org.openoffice.maven.BuildInfo;
 import org.openoffice.maven.ConfigurationManager;
 import org.openoffice.maven.utils.VisitableFile;
 
@@ -61,6 +63,14 @@ import org.openoffice.maven.utils.VisitableFile;
  * @author Cedric Bosdonnat
  */
 public class IdlBuilderMojo extends AbstractMojo {
+    
+    /**
+     * Instantiates a new idl builder mojo.
+     */
+    public IdlBuilderMojo() {
+        super();
+        ConfigurationManager.setLog(this.getLog());
+    }
 
     static final class PackageNameFilter implements FilenameFilter {
         public boolean accept(File pDir, String pName) {
@@ -132,17 +142,7 @@ public class IdlBuilderMojo extends AbstractMojo {
                                  MojoFailureException {
 
         try {
-            ooo = ConfigurationManager.initOOo(ooo);
-            getLog().info("OpenOffice.org used: " + ooo.getAbsolutePath());
-
-            sdk = ConfigurationManager.initSdk(sdk);
-            getLog().info("OpenOffice.org SDK used: " + sdk.getAbsolutePath());
-            
-            ConfigurationManager.setIdlDir(idlDir);
-            getLog().info("idlDir used: " + idlDir.getAbsolutePath());
-
-            ConfigurationManager.setOutput(directory);
-            ConfigurationManager.setClassesOutput(outputDirectory);
+            setUp();
             
             // Check if the IDL folder is present
             File idlDir = ConfigurationManager.getIdlDir();
@@ -151,9 +151,9 @@ public class IdlBuilderMojo extends AbstractMojo {
                     "No IDL folder found among in the resources");
             }
             
-            getLog().info("IDL folder used: " + idlDir.getPath());
+            this.getLog().info("IDL folder used: " + idlDir.getPath());
 
-            getLog().info("Building IDL files");
+            this.getLog().info("Building IDL files");
             // Build each IDL file
             File idl = ConfigurationManager.getIdlDir();
             VisitableFile idlSources = new VisitableFile(idl.getPath());
@@ -163,23 +163,37 @@ public class IdlBuilderMojo extends AbstractMojo {
             // Continue only if there were idl files to build
             if (idlVisitor.hasBuildIdlFile()) {
 
-                getLog().info("Merging into types.rdb file");
+                this.getLog().info("Merging into types.rdb file");
                 // Merge the URD files into a types.rdb file
                 VisitableFile urdFiles = new VisitableFile(
                        ConfigurationManager.getUrdDir());
                 urdFiles.accept(new RegmergeVisitor());
 
-                getLog().info("Generating classes from the types.rdb file");
+                this.getLog().info("Generating classes from the types.rdb file");
                 // Run javamaker against the types.rdb file
                 generatesClasses();
             } else {
-                getLog().warn("No idl file to build");
+                this.getLog().warn("No idl file to build");
             }
             
         } catch (Exception e) {
-            getLog().error("Error during idl-build", e);
-            throw new MojoFailureException("Please check the above errors");
+            this.getLog().error("Error during idl-build", e);
+            //throw new MojoFailureException("Please check the above errors");
+            throw new MojoFailureException("Error during idl-build", e);
         }
+    }
+
+    private void setUp() {
+        ConfigurationManager.setLog(this.getLog());
+        this.getLog().info("Build id: " + new BuildInfo());
+        ooo = ConfigurationManager.initOOo(ooo);
+        this.getLog().info("OpenOffice.org used: " + ooo.getAbsolutePath());
+        sdk = ConfigurationManager.initSdk(sdk);
+        this.getLog().info("OpenOffice.org SDK used: " + sdk.getAbsolutePath());
+        ConfigurationManager.setIdlDir(idlDir);
+        this.getLog().info("idlDir used: " + idlDir.getAbsolutePath());
+        ConfigurationManager.setOutput(directory);
+        ConfigurationManager.setClassesOutput(outputDirectory);
     }
 
     /**
@@ -198,30 +212,39 @@ public class IdlBuilderMojo extends AbstractMojo {
                     "No " + typesFile + " file build: check previous errors");
         }
 
-        // Compute the command
-        String commandPattern = "javamaker -T{0}.* -nD -Gc -BUCR -O " +
-                "\"{1}\" \"{2}\" -X\"{3}\" -X\"{4}\"";
-
-        String classesDir = ConfigurationManager.getClassesOutput().
-            getPath();
-        String oooTypesFile = ConfigurationManager.getOOoTypesFile();
-
-        // Guess the root module
-        String rootModule = guessRootModule();
-
-        String[] args = {
-            rootModule, 
-            classesDir, 
-            typesFile, 
-            oooTypesFile,
-            ConfigurationManager.getOffapiTypesFile()
-        };
-        String command = MessageFormat.format(commandPattern, (Object[])args);
-
-        getLog().info("Running command: " + command);
+//        // Compute the command
+//        String commandPattern = "javamaker -T{0}.* -nD -Gc -BUCR -O " +
+//                "\"{1}\" \"{2}\" -X\"{3}\" -X\"{4}\"";
+//
+//        String classesDir = ConfigurationManager.getClassesOutput().
+//            getPath();
+//        String oooTypesFile = ConfigurationManager.getOOoTypesFile();
+//
+//        // Guess the root module
+//        String rootModule = guessRootModule();
+//
+//        String[] args = {
+//            rootModule, 
+//            classesDir, 
+//            typesFile, 
+//            oooTypesFile,
+//            ConfigurationManager.getOffapiTypesFile()
+//        };
+//        String command = MessageFormat.format(commandPattern, (Object[])args);
+//
+//        this.getLog().info("Running command: " + command);
+//        
+//        // Run the javamaker command
+//        ConfigurationManager.runTool(command);
         
-        // Run the javamaker command
-        ConfigurationManager.runTool(command);
+        String classesDir = ConfigurationManager.getClassesOutput().getPath();
+        String oooTypesFile = ConfigurationManager.getOOoTypesFile();
+        String rootModule = guessRootModule();
+        int n = ConfigurationManager.runCommand("javamaker", "-T" + rootModule + ".*", "-nD", "-Gc", "-BUCR", "-O",
+                classesDir, typesFile, "-X" + oooTypesFile, "-X" + ConfigurationManager.getOffapiTypesFile());
+        if (n != 0) {
+            throw new CommandLineException("javamaker exits with " + n);
+        }
     }
 
     /**
@@ -256,13 +279,13 @@ public class IdlBuilderMojo extends AbstractMojo {
         }
         
         if (currentFile.equals(idlDir)) {
-            getLog().warn("no children found in " + idlDir);
+            this.getLog().warn("no children found in " + idlDir);
             return "";
         }
         String modulePath = currentFile.getPath().substring(
                 idlDir.getPath().length() + 1);
-        String fileSep = System.getProperty("file.separator");
-        String rootModule = modulePath.replaceAll(fileSep, ".");
+        modulePath = FilenameUtils.separatorsToUnix(modulePath);
+        String rootModule = modulePath.replaceAll("/", ".");
         return rootModule;
     }
 }

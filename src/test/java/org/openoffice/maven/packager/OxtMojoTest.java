@@ -24,20 +24,20 @@
 
 package org.openoffice.maven.packager;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.zip.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.DefaultArtifact;
-import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugin.logging.SystemStreamLog;
-import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.openoffice.maven.AbstractMojoTest;
 
@@ -49,9 +49,9 @@ import org.openoffice.maven.AbstractMojoTest;
  */
 public final class OxtMojoTest extends AbstractMojoTest {
     
-    private static final Log log = new SystemStreamLog();
-    private static final String TEST_FINAL_NAME = "testFinalName";
-
+    private static final Log log = LogFactory.getLog(OxtMojoTest.class);
+    private static final File OXT_DIR = new File(getBasedir(), "src/main/resources/archetype-resources/src/main/oxt");
+    
     /**
      * Set up the mojo.
      * 
@@ -59,16 +59,16 @@ public final class OxtMojoTest extends AbstractMojoTest {
      */
     protected void setUp() throws Exception {
         super.setUp();
-        mojo = (OxtMojo) lookupMojo("oxt", testPom);
+        mojo = (OxtMojo) lookupMojo("oxt", TEST_POM);
         assertNotNull(mojo);
         this.setUpMojo();
     }
     
     protected void setUpMojo() throws IllegalAccessException {
-        super.setUpMojo();
+        this.setUpTargetDir();
         setUpAbstractOxtMojo();
         setVariableValueToObject(mojo, "attachedArtifacts", new ArrayList<Artifact>());
-        File classesDir = new File(this.getTargetDir(), "classes");
+        File classesDir = new File(getTargetDir(), "classes");
         setVariableValueToObject(mojo, "classesDirectory", classesDir);
         setVariableValueToObject(mojo, "defaultManifestFile", new File(classesDir, "META-INF/MANIFEST.MF"));
     }
@@ -81,33 +81,11 @@ public final class OxtMojoTest extends AbstractMojoTest {
     }
     
     private void setUpOxtDir() throws IllegalAccessException {
-        File oxtDir = new File(getBasedir(), "src/main/resources/archetype-resources/src/main/oxt");
-        setVariableValueToObject(mojo, "oxtDir", oxtDir);
+        setVariableValueToObject(mojo, "oxtDir", OXT_DIR);
     }
 
-    private void setUpProject4Mojo() throws IllegalAccessException {
-        File baseDir = new File(getBasedir(), "src/main/resources/archetype-resources");
-        File pomFile = new File(baseDir, "pom.xml");
-        try {
-            MavenProject project = new MavenProject();
-            String groupId = "org.openoffice.dev.tests";
-            String artifactId = "ooo-ext-test";
-            Artifact artifact = new DefaultArtifact(groupId, artifactId,
-                    VersionRange.createFromVersion("1.1.1-SNAPSHOT"), "test", "type", "classifier", null);
-            project.addAttachedArtifact(artifact);
-            project.setArtifact(artifact);
-            project.setGroupId(groupId);
-            project.setArtifactId(artifactId);
-            project.setBasedir(baseDir);
-            project.setFile(pomFile);
-            setVariableValueToObject(mojo, "project", project);
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        }
-    }
-    
     /**
-     * Test method for {@link tOxtMojo#execute()}.
+     * Test method for {@link OxtMojo#execute()}.
      *
      * @throws MojoExecutionException the mojo execution exception
      * @throws MojoFailureException the mojo failure exception
@@ -121,8 +99,10 @@ public final class OxtMojoTest extends AbstractMojoTest {
      * Test create archive - just to see what happens.
      *
      * @throws MojoExecutionException the mojo execution exception
+     * @throws ZipException the zip exception
+     * @throws IOException Signals that an I/O exception has occurred.
      */
-    public void testCreateArchive() throws MojoExecutionException {
+    public void testCreateArchive() throws MojoExecutionException, ZipException, IOException {
         OxtMojo oxtMojo = (OxtMojo) mojo;
         File archive = oxtMojo.createArchive();
         log.info("created archive: " + archive);
@@ -146,17 +126,65 @@ public final class OxtMojoTest extends AbstractMojoTest {
         String[] excludes = { "README.txt" };
         setVariableValueToObject(mojo, "excludes", excludes);
         mojo.execute();
-        File oxtFile = new File(outputDirectory, TEST_FINAL_NAME + ".oxt");
-        assertTrue(oxtFile + " is not a file", oxtFile.isFile());
-        ZipFile zip = new ZipFile(oxtFile);
+        checkArchive();
+        ZipFile zip = new ZipFile(OXT_FILE);
         Enumeration<? extends ZipEntry> entries = zip.entries();
         while (entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
-            log.info(entry.getName());
             if (entry.getName().equals(excludes[0])) {
                 fail(entry.getName() + " should be excluded!");
             }
         }
     }
     
+    /**
+     * Test manifest recognition. If there is already a manifest file available
+     * this one should be used.
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
+     * @throws IllegalAccessException the illegal access exception
+     * @throws MojoExecutionException the mojo execution exception
+     * @throws MojoFailureException the mojo failure exception
+     */
+    public void testManifestRecognition() throws IOException, IllegalAccessException, MojoExecutionException,
+            MojoFailureException {
+        String manifestContent = "<Test-Manifest/>";
+        File testDir = createOxtDirWithManifest(manifestContent);
+        setVariableValueToObject(mojo, "oxtDir", testDir);
+        mojo.execute();
+        checkArchive();
+        String content = getManifestContent();
+        assertEquals(manifestContent, content);
+    }
+
+    private static File createOxtDirWithManifest(String manifestContent) throws IOException {
+        File testDir = new File(OUTPUT_DIRECTORY, "oxt");
+        FileUtils.copyDirectory(OXT_DIR, testDir);
+        File metaInfDir = new File(testDir, "META-INF");
+        metaInfDir.mkdir();
+        assertTrue(metaInfDir.getAbsolutePath(), metaInfDir.isDirectory());
+        File manifestFile = new File(metaInfDir, "manifest.xml");
+        FileUtils.writeStringToFile(manifestFile, manifestContent);
+        return testDir;
+    }
+    
+    private static void checkArchive() throws ZipException, IOException {
+        assertTrue(OXT_FILE + " is not a file", OXT_FILE.isFile());
+        ZipFile zip = new ZipFile(OXT_FILE);
+        ZipEntry entry = zip.getEntry("META-INF/manifest.xml");
+        assertNotNull("no manifest inside", entry);
+        zip.close();
+    }
+    
+    private static String getManifestContent() throws ZipException, IOException {
+        ZipFile zip = new ZipFile(OXT_FILE);
+        try {
+            ZipEntry entry = zip.getEntry("META-INF/manifest.xml");
+            InputStream istream = zip.getInputStream(entry);
+            return IOUtils.toString(istream);
+        } finally {
+            zip.close();
+        }
+    }
+
 }

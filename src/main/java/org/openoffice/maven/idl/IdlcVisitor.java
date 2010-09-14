@@ -43,21 +43,22 @@
  ************************************************************************/
 package org.openoffice.maven.idl;
 
-import java.io.*;
-import java.text.MessageFormat;
+import java.io.File;
 
+import org.codehaus.plexus.util.cli.CommandLineException;
 import org.openoffice.maven.ConfigurationManager;
-import org.openoffice.maven.utils.*;
+import org.openoffice.maven.utils.IVisitable;
+import org.openoffice.maven.utils.VisitableFile;
 
 /**
  * Visits all the IDL files and build them.
  * 
  * @author Cedric Bosdonnat
  */
-public class IdlcVisitor implements IVisitor {
+public class IdlcVisitor extends AbstractVisitor {
 
     private boolean mFoundIdlFile = false;
-
+    
     /**
      * @return <code>true</code> if one IDL file have been build,
      *         <code>false</code> otherwise
@@ -88,17 +89,15 @@ public class IdlcVisitor implements IVisitor {
 
     /**
      * Executes the <code>idlc</code> tool on the provided IDL file.
-     * <br/>
-     * The method has default visibility for testing.
      * 
      * @param pFile
      *            the IDL file to compile
      * @throws Exception
      *             if the idl file compilation fails
      */
-    static void runIdlcOnFile(VisitableFile pFile) throws Exception {
+    private static void runIdlcOnFile(VisitableFile pFile) throws Exception {
 
-        new IdlBuilderMojo().getLog().info("Building file: " + pFile.getPath());
+        getLog().info("Building file: " + pFile.getPath());
 
         String idlPath = ConfigurationManager.getIdlDir().getAbsolutePath();
         String idlRelativePath = pFile.getParentFile().getAbsolutePath().substring(idlPath.length());
@@ -108,29 +107,35 @@ public class IdlcVisitor implements IVisitor {
         File sdkIdl = new File(ConfigurationManager.getSdk(), "idl");
         File prjIdl = ConfigurationManager.getIdlDir();
 
-        System.out.println(outDir);
+        getLog().debug("output dir: " + outDir);
 
-        String[] argsParam = { outDir.getPath(), sdkIdl.getPath(), prjIdl.getPath(), pFile.getPath() };
+//        String[] argsParam = { outDir.getPath(), sdkIdl.getPath(), prjIdl.getPath(), pFile.getPath() };
+//
+//        File command = new File("idlc");
+//        String args = "-O \"{0}\" -I \"{1}\" -I \"{2}\" {3}";
+//        args = MessageFormat.format(args, (Object[]) argsParam);
+//        
+//        Process process = ConfigurationManager.runTool(command.getPath(), args);
+//
+//        ErrorReader.readErrors(process.getErrorStream());
+//
+//        String output = "";
+//        BufferedReader buffer = new BufferedReader(new InputStreamReader(process.getInputStream()));
+//        String line = buffer.readLine();
+//        while (null != line) {
+//            output += line + "\n";
+//            line = buffer.readLine();
+//        }
+//        System.out.println("Output: " + output);
+//        int n = process.waitFor();
+//        if (n != 0) {
+//            throw new Exception("'" + command + " " + args + "' exits with " + n);
+//        }
 
-        File command = new File("idlc");
-        String args = "-O \"{0}\" -I \"{1}\" -I \"{2}\" {3}";
-        args = MessageFormat.format(args, (Object[]) argsParam);
-        
-        Process process = ConfigurationManager.runTool(command.getPath(), args);
-
-        ErrorReader.readErrors(process.getErrorStream());
-
-        String output = "";
-        BufferedReader buffer = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        String line = buffer.readLine();
-        while (null != line) {
-            output += line + "\n";
-            line = buffer.readLine();
-        }
-        System.out.println("Output: " + output);
-        int n = process.waitFor();
+        int n = ConfigurationManager.runCommand("idlc", "-O", outDir.getPath(), "-I", sdkIdl.getPath(), "-I",
+                prjIdl.getPath(), pFile.getPath());
         if (n != 0) {
-            throw new Exception("'" + command + " " + args + "' exits with " + n);
+            throw new CommandLineException("idlc exits with " + n);
         }
     }
 }

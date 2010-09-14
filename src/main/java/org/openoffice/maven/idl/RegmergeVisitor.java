@@ -43,10 +43,10 @@
  ************************************************************************/
 package org.openoffice.maven.idl;
 
-import java.text.MessageFormat;
-
+import org.codehaus.plexus.util.cli.CommandLineException;
 import org.openoffice.maven.ConfigurationManager;
-import org.openoffice.maven.utils.*;
+import org.openoffice.maven.utils.IVisitable;
+import org.openoffice.maven.utils.VisitableFile;
 
 /**
  * Visits the URD files and merge them with the <code>types.rdb</code> file.
@@ -54,8 +54,8 @@ import org.openoffice.maven.utils.*;
  * @author Cedric Bosdonnat
  *
  */
-public class RegmergeVisitor implements IVisitor {
-
+public class RegmergeVisitor extends AbstractVisitor {
+    
     /**
      * {@inheritDoc}
      */
@@ -84,19 +84,24 @@ public class RegmergeVisitor implements IVisitor {
     private static void runRegmergeOnFile(VisitableFile pFile) 
         throws Exception {
         
-        new IdlBuilderMojo().getLog().info("Merging file: " + pFile.getPath());
+        getLog().info("Merging file: " + pFile.getPath());
         
         // Compute the command line
-        String commandPattern = "regmerge {0} /UCR {0} \"{1}\"";
-        
-        String projectTypes = "";
-        projectTypes = ConfigurationManager.getTypesFile();
-        
-        String[] args = {projectTypes, pFile.getPath()};
-        
-        String command = MessageFormat.format(commandPattern, (Object[]) args);
+//        String commandPattern = "regmerge {0} /UCR {0} \"{1}\"";
+//        
+//        String projectTypes = "";
+//        projectTypes = ConfigurationManager.getTypesFile();
+//        
+//        String[] args = {projectTypes, pFile.getPath()};
+//        
+//        String command = MessageFormat.format(commandPattern, (Object[]) args);
         
         // Run regmerge
-        ConfigurationManager.runTool(command);
+//        ConfigurationManager.runTool(command);
+        int n = ConfigurationManager.runCommand("regmerge", ConfigurationManager.getTypesFile(), "/UCR",
+                pFile.getPath());
+        if (n != 0) {
+            throw new CommandLineException("regmerge returned with " + n);
+        }
     }
 }

@@ -1,8 +1,6 @@
 package org.openoffice.maven.installer;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStreamReader;
 import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
@@ -31,7 +29,6 @@ public class OOoUninstalMojo extends AbstractMojo {
      * OOo instance to build the extension against.
      * 
      * @parameter
-     * @required
      */
     private File ooo;
 
@@ -39,13 +36,11 @@ public class OOoUninstalMojo extends AbstractMojo {
      * OOo SDK installation where the build tools are located.
      * 
      * @parameter
-     * @required
      */
     private File sdk;
 
     /**
-     * <p>This method install an openoffice plugin package to the specified
-     * openoffice installation</p>
+     * <p>This method uninstall an openoffice plugin package.</p>
      * 
      * @throws MojoExecutionException
      *             if there is a problem during the packaging execution.
@@ -53,15 +48,16 @@ public class OOoUninstalMojo extends AbstractMojo {
      *             if the packaging can't be done.
      */
     public void execute() throws MojoExecutionException, MojoFailureException {
-        ConfigurationManager.setOOo(ooo);
-        getLog().debug("OpenOffice.org used: " + ooo.getAbsolutePath());
+        ooo = ConfigurationManager.initOOo(ooo);
+        getLog().info("OpenOffice.org used: " + ooo.getAbsolutePath());
 
-        ConfigurationManager.setSdk(sdk);
-        getLog().debug("OpenOffice.org SDK used: " + sdk.getAbsolutePath());
+        sdk = ConfigurationManager.initSdk(sdk);
+        getLog().info("OpenOffice.org SDK used: " + sdk.getAbsolutePath());
 
         Artifact unoPlugin = null;
         for (Artifact attachedArtifact : attachedArtifacts) {
-            if ("zip".equals(FilenameUtils.getExtension(attachedArtifact.getFile().getPath()))) {
+            String extension = FilenameUtils.getExtension(attachedArtifact.getFile().getPath());
+            if ("zip".equals(extension) || "oxt".equals(extension)) {
                 unoPlugin = attachedArtifact;
                 break;
             }
@@ -78,34 +74,16 @@ public class OOoUninstalMojo extends AbstractMojo {
             String unopkg = "unopkg";
             if (os.startsWith("windows"))
                 unopkg = "unopkg.com";
-            String[] cmd = new String[] { unopkg, //
-                    "remove", //
-                    unoPluginFile.getCanonicalPath(), //
-            };
 
-            getLog().info("Installing plugin to OOo... please wait");
-            Process process = ConfigurationManager.runTool(cmd);
-            { // read std input
-                String message = "";
-                BufferedReader buffer = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                String line = buffer.readLine();
-                while (null != line) {
-                    message += line + "\n";
-                    line = buffer.readLine();
-                }
-                if (message.length() > 0)
-                    getLog().info(message);
-            }
-            
-            int returnCode = process.exitValue();
-            boolean success = returnCode == 0;
-            
-            if (success)
+            getLog().info("Uninstalling plugin to OOo... please wait");
+            int returnCode = ConfigurationManager.runCommand(unopkg, "remove", unoPluginFile.getCanonicalPath());            
+            if (returnCode == 0) {
                 getLog().info("Plugin installed successfully");
-            else
-                throw new MojoExecutionException("undpkg renurned in error. Code: " + returnCode);
+            } else {
+                throw new MojoExecutionException("'unopkg remove " + unoPluginFile + "' returned with " + returnCode);
+            }
         } catch (Exception e) {
-            throw new MojoExecutionException("Error while installing package to OOo.", e);
+            throw new MojoExecutionException("Error while uninstalling package to OOo.", e);
         }
     }
 

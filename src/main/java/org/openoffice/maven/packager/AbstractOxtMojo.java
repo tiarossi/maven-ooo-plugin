@@ -23,7 +23,6 @@ import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
@@ -36,11 +35,10 @@ import org.codehaus.plexus.archiver.jar.JarArchiver;
  */
 public abstract class AbstractOxtMojo extends AbstractMojo {
     
-    private static final String[] DEFAULT_EXCLUDES = new String[] { "**/package.html", "CVS", "**/CVS" };
+    private static final String[] DEFAULT_EXCLUDES = new String[] { "**/package.html", "CVS", "**/CVS", ".cvsignore",
+                    "**/.cvsignore" };
 
     private static final String[] DEFAULT_INCLUDES = new String[] { };
-
-    private final Log log = super.getLog();
 
     /**
      * List of files to include. Specified as fileset patterns.
@@ -203,7 +201,7 @@ public abstract class AbstractOxtMojo extends AbstractMojo {
             }
 
             assert project.getArtifact() != null;
-            log.debug("createArchive(..) with project " + project);
+            getLog().debug("createArchive(..) with project " + project);
             archiver.createArchive(project, archive);
 
             return jarFile;
