@@ -32,6 +32,7 @@ import java.util.*;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.codehaus.plexus.util.FileUtils;
 import org.openoffice.maven.ConfigurationManager;
 import org.openoffice.plugin.core.model.UnoPackage;
 
@@ -70,6 +71,14 @@ public class OxtMojo extends AbstractOxtMojo {
      * @parameter expression="src/main/resources"
      */
     private File oxtDir;
+
+    /**
+     * Directory containing the jars that shoud be packaged into the lib
+     * directory of the oxt
+     *
+     * @parameter expression="${project.build.directory}/lib"
+     */
+    private File libDir;
 
     /**
      * This is where build results go.
@@ -160,7 +169,20 @@ public class OxtMojo extends AbstractOxtMojo {
         }
 
         pkg.addDirectory(oxtDir, this.getIncludes(), this.getExcludes());
-        
+        //As libraries to the oxt file
+        if (libDir.isDirectory()) {
+            for (File child : libDir.listFiles()) {
+                final String extension = FileUtils.extension(finalName);
+                if (FileUtils.extension(finalName).equalsIgnoreCase("jar")) {
+                    pkg.addComponentFile("lib/" + child.getName(), child, "Java");
+                } else {
+                    getLog().info(String.format("%s of type %s skipped", child.getName(), extension));
+                }
+            }
+        }
+
+
+
         if (pkg.close() == null) {
             getLog().error("OXT Package Build failed");
         }
