@@ -143,7 +143,11 @@ public class ConfigurationManager {
      * @return the OpenOffice.org <code>offapi.rdb</code> file path
      */
     public static String getOffapiTypesFile() {
-        return new File(Environment.getOfficeBaseHome(), "program/offapi.rdb").getPath();
+        File offapiTypesFile = FileFinder.tryFiles(
+                new File(Environment.getOfficeBaseHome(), "program/offapi.rdb"),
+                new File(Environment.getOfficeHome(), "program/types/offapi.rdb"));
+
+        return offapiTypesFile.getPath();
     }
     
     /**

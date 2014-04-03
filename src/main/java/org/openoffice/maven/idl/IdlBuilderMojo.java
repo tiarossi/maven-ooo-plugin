@@ -240,7 +240,7 @@ public class IdlBuilderMojo extends AbstractMojo {
         String classesDir = ConfigurationManager.getClassesOutput().getPath();
         String oooTypesFile = ConfigurationManager.getOOoTypesFile();
         String rootModule = guessRootModule();
-        int n = ConfigurationManager.runCommand("javamaker", "-T" + rootModule + ".*", "-nD", "-Gc", "-BUCR", "-O",
+        int n = ConfigurationManager.runCommand("javamaker", "-T" + rootModule + ".*", "-nD", "-Gc",  "-O",
                 classesDir, typesFile, "-X" + oooTypesFile, "-X" + ConfigurationManager.getOffapiTypesFile());
         if (n != 0) {
             throw new CommandLineException("javamaker exits with " + n);
