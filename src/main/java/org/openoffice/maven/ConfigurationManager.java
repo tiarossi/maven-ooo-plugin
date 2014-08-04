@@ -70,6 +70,10 @@ public class ConfigurationManager {
     private static File sOutput;
 
     private static File sClassesOutput;
+
+    private static File sUserInstallation;
+
+    private static String sJpdaAddress;
     
     /**
      * We want to use the same Log stream as the Mojos in this project.
@@ -313,7 +317,42 @@ public class ConfigurationManager {
         }
         return binDir.getAbsolutePath();
     }
-    
+
+    /**
+     * Sets the directory os the user installation to use
+     *
+     * @param pUserInstallation
+     * the user installation directory
+     */
+    public static void setUserInstallation(File pUserInstallation) {
+        assert pUserInstallation != null;
+        sUserInstallation = pUserInstallation;
+    }
+
+    /**
+     * Returns the path os installation where extension will be installed
+     *
+     * @return the user installatino path
+     */
+    public static File getUserInstallation() {
+        return sUserInstallation;
+    }
+
+    public static File initUserInstallation(File pUserInstallation) {
+        if (pUserInstallation != null) {
+            setUserInstallation(pUserInstallation);
+        }
+        return getUserInstallation();
+    }
+
+    public static String getJpdaAddress() {
+        return sJpdaAddress;
+    }
+
+    public static void setJpdaAddress(String sJpdaAddress) {
+        ConfigurationManager.sJpdaAddress = sJpdaAddress;
+    }
+
     /**
      * Run command.
      * See {@link "http://docs.codehaus.org/display/MAVENUSER/Mojo+Developer+Cookbook"}.
@@ -384,6 +423,18 @@ public class ConfigurationManager {
             cl.addEnvironment("LD_LIBRARY_PATH", oooLibs);
             //log.debug("LD_LIBRARY_PATH=" + oooLibs);
         }
+        if (sJpdaAddress != null) {
+            cl.addEnvironment("JAVA_TOOL_OPTIONS", "-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=" + sJpdaAddress);
+        }
+        
+        if (sUserInstallation != null) {
+            cl.addEnvironment("UserInstallation", "file://" + sUserInstallation.toURI().getPath());
+        }
+        /*log.debug("Environment");
+         for (int i = 0; i < cl.getEnvironmentVariables().length; i++) {
+            String string = cl.getEnvironmentVariables()[i];
+            log.debug(string);
+        }*/
     }
-    
+
 }
