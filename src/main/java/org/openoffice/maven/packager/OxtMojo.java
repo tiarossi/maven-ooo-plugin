@@ -169,11 +169,11 @@ public class OxtMojo extends AbstractOxtMojo {
         }
 
         pkg.addDirectory(oxtDir, this.getIncludes(), this.getExcludes());
-        //As libraries to the oxt file
+        //Add libraries to the oxt file
         if (libDir.isDirectory()) {
             for (File child : libDir.listFiles()) {
-                final String extension = FileUtils.extension(finalName);
-                if (FileUtils.extension(finalName).equalsIgnoreCase("jar")) {
+                final String extension = FileUtils.extension(child.getName());
+                if (extension.equalsIgnoreCase("jar")) {
                     pkg.addComponentFile("lib/" + child.getName(), child, "Java");
                 } else {
                     getLog().info(String.format("%s of type %s skipped", child.getName(), extension));
