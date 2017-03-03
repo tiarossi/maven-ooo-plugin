@@ -58,6 +58,8 @@ public class OOoInstalMojoTest extends AbstractMojoTest {
         mojo = (AbstractMojo) lookupMojo(phase, TEST_POM);
         assertNotNull(mojo);
         this.setUpProject4Mojo();
+        File userInstallation = new File(getTargetDir(), "soffice_debug");
+        setVariableValueToObject(mojo, "userInstallation", userInstallation);
     }
 
     /**

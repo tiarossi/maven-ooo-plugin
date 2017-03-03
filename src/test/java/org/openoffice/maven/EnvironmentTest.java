@@ -23,6 +23,7 @@ package org.openoffice.maven;
 import static org.junit.Assert.*;
 
 import java.io.File;
+import org.apache.commons.lang.SystemUtils;
 
 import org.junit.Test;
 
@@ -49,8 +50,10 @@ public class EnvironmentTest extends AbstractTest {
      */
     @Test
     public void testGetOfficeBaseHome() {
-        File dir = Environment.getOfficeBaseHome();
-        assertTrue(dir + " is no directory", dir.isDirectory());
+        if (!SystemUtils.IS_OS_WINDOWS) {
+            File dir = Environment.getOfficeBaseHome();
+            assertTrue(dir + " is no directory", dir.isDirectory());
+        }
     }
 
     /**

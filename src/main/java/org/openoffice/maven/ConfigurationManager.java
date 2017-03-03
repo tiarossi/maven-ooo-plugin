@@ -401,7 +401,7 @@ public class ConfigurationManager {
         log.info("'" + cl + "' returned with " + returnValue);
         return returnValue;
     }
-    
+
     private static void setUpEnvironmentFor(final Commandline cl) throws Exception {
         cl.addSystemEnvironment();
         Properties envVars = cl.getSystemEnvVars();
@@ -414,6 +414,7 @@ public class ConfigurationManager {
         if (SystemUtils.IS_OS_WINDOWS) {
             // I'm not sure if this works / is necessary
             cl.addEnvironment("DLLPATH", oooLibs);
+            cl.addEnvironment("LIB", oooLibs);
             //log.debug("DLLPATH=" + oooLibs);
         } else if (SystemUtils.IS_OS_MAC) {
             cl.addEnvironment("DYLD_LIBRARY_PATH", oooLibs);
@@ -428,10 +429,10 @@ public class ConfigurationManager {
         }
         
         if (sUserInstallation != null) {
-            cl.addEnvironment("UserInstallation", "file://" + sUserInstallation.toURI().getPath());
+            cl.addEnvironment("UserInstallation", "file://" + sUserInstallation.toURI().getRawPath());
         }
         /*log.debug("Environment");
-         for (int i = 0; i < cl.getEnvironmentVariables().length; i++) {
+        for (int i = 0; i < cl.getEnvironmentVariables().length; i++) {
             String string = cl.getEnvironmentVariables()[i];
             log.debug(string);
         }*/

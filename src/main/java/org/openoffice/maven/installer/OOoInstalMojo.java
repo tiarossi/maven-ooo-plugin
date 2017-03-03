@@ -63,7 +63,9 @@ public class OOoInstalMojo extends AbstractMojo {
         getLog().info("OpenOffice.org SDK used: " + sdk.getAbsolutePath());
 
         userInstallation = ConfigurationManager.initUserInstallation(userInstallation);
-        getLog().info("User installatino used: " + userInstallation.getAbsolutePath());
+        if (userInstallation != null) {
+            getLog().info("User installation used: " + userInstallation.getAbsolutePath());
+        }
 
 
         File unoPluginFile = project.getArtifact().getFile();
@@ -79,7 +81,7 @@ public class OOoInstalMojo extends AbstractMojo {
             }
 
             getLog().info("Installing plugin to OOo... please wait");
-            int returnCode = ConfigurationManager.runCommand(unopkg, "gui", "-f", unoPluginFile.getCanonicalPath());
+            int returnCode = ConfigurationManager.runCommand(unopkg, "gui", "-f", unoPluginFile.getAbsolutePath());
             if (returnCode == 0) {
                 getLog().info("Plugin installed successfully");
             } else {
