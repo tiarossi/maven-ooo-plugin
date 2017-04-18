@@ -1,7 +1,12 @@
 package org.openoffice.maven.installer;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamReader;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.artifact.Artifact;
@@ -72,15 +77,39 @@ public class OOoUninstalMojo extends AbstractMojo {
         try {
             String os = System.getProperty("os.name").toLowerCase();
             String unopkg = "unopkg";
-            if (os.startsWith("windows"))
+            if (os.startsWith("windows")) {
                 unopkg = "unopkg.com";
-
+            }
+            
+            final FileInputStream fis = new FileInputStream(unoPluginFile);
+            final ZipInputStream zip = new ZipInputStream(fis);
+            String extensionIdentifier = "";
+            ZipEntry entry = zip.getNextEntry();
+            while (entry != null) {
+                if (!entry.getName().equals("description.xml")) {
+                    entry = zip.getNextEntry();
+                    continue;
+                }
+                final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+                final XMLStreamReader streamReader = inputFactory.createXMLStreamReader(zip);
+                while (streamReader.hasNext()) {
+                    if (streamReader.isStartElement()) {
+                        if (streamReader.getLocalName().equals("identifier")) {
+                            extensionIdentifier = streamReader.getAttributeValue(streamReader.getAttributeNamespace(0), "value");
+                            break;
+                        }
+                    }
+                    streamReader.next();
+                }
+                break;
+            }
             getLog().info("Uninstalling plugin to OOo... please wait");
-            int returnCode = ConfigurationManager.runCommand(unopkg, "remove", unoPluginFile.getCanonicalPath());            
+            //int returnCode = ConfigurationManager.runCommand(unopkg, "list");
+            int returnCode = ConfigurationManager.runCommand(unopkg, "remove", extensionIdentifier, "--log-file", File.createTempFile("unopkg", ".log").getAbsolutePath());
             if (returnCode == 0) {
-                getLog().info("Plugin installed successfully");
+                getLog().info("Plugin uninstalled successfully");
             } else {
-                throw new MojoExecutionException("'unopkg remove " + unoPluginFile + "' returned with " + returnCode);
+                throw new MojoExecutionException("'unopkg remove " + extensionIdentifier + "' returned with " + returnCode);
             }
         } catch (Exception e) {
             throw new MojoExecutionException("Error while uninstalling package to OOo.", e);

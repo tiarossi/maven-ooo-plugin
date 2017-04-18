@@ -44,6 +44,21 @@ public class OOoInstalMojo extends AbstractMojo {
     private File userInstallation;
 
     /**
+     * Should plugin display Extension Manager Graphical User Interface or not
+     *
+     * @parameter default-value=false
+     */
+    private Boolean showGui;
+
+    public Boolean getShowGui() {
+        return showGui;
+    }
+
+    public void setShowGui(Boolean showGui) {
+        this.showGui = showGui;
+    }
+
+    /**
      * <p>
      * This method install an openoffice plugin package to the specified
      * openoffice installation
@@ -81,11 +96,17 @@ public class OOoInstalMojo extends AbstractMojo {
             }
 
             getLog().info("Installing plugin to OOo... please wait");
-            int returnCode = ConfigurationManager.runCommand(unopkg, "gui", "-f", unoPluginFile.getAbsolutePath());
+            final String subcommand;
+            if (showGui) {
+                subcommand = "gui";
+            } else {
+                subcommand = "add";
+            }
+            int returnCode = ConfigurationManager.runCommand(unopkg, subcommand, "-f", unoPluginFile.getAbsolutePath(), "--log-file", File.createTempFile("unopkg", ".log").getAbsolutePath());
             if (returnCode == 0) {
                 getLog().info("Plugin installed successfully");
             } else {
-                throw new MojoExecutionException("'unopkg gui -f " + unoPluginFile + "' returned with " + returnCode);
+                throw new MojoExecutionException("'unopkg " + subcommand + " -f " + unoPluginFile + "' returned with " + returnCode);
             }
         } catch (Exception e) {
             throw new MojoExecutionException("Error while installing package to OOo.", e);
