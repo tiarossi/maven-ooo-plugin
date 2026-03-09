@@ -204,43 +204,12 @@ public class IdlBuilderMojo extends AbstractMojo {
             throw new Exception(
                     "No " + typesFile + " file build: check previous errors");
         }
-
-//        // Compute the command
-//        String commandPattern = "javamaker -T{0}.* -nD -Gc -BUCR -O " +
-//                "\"{1}\" \"{2}\" -X\"{3}\" -X\"{4}\"";
-//
-//        String classesDir = ConfigurationManager.getClassesOutput().
-//            getPath();
-//        String oooTypesFile = ConfigurationManager.getOOoTypesFile();
-//
-//        // Guess the root module
-//        String rootModule = guessRootModule();
-//
-//        String[] args = {
-//            rootModule, 
-//            classesDir, 
-//            typesFile, 
-//            oooTypesFile,
-//            ConfigurationManager.getOffapiTypesFile()
-//        };
-//        String command = MessageFormat.format(commandPattern, (Object[])args);
-//
-//        this.getLog().info("Running command: " + command);
-//        
-//        // Run the javamaker command
-//        ConfigurationManager.runTool(command);
         
         String classesDir = ConfigurationManager.getClassesOutput().getPath();
         String oooTypesFile = ConfigurationManager.getOOoTypesFile();
         String rootModule = guessRootModule();
-        int n = 0;
-        if (Environment.getOfficeHome().getAbsolutePath().contains("BrOffice")) {
-            n = ConfigurationManager.runCommand("javamaker", "-T" + rootModule + ".*", "-nD", "-Gc", "-BUCR", "-O",
+        int n = ConfigurationManager.runCommand("javamaker", "-T" + rootModule + ".*", "-nD", "-Gc", "-O",
                     classesDir, typesFile, "-X" + oooTypesFile, "-X" + ConfigurationManager.getOffapiTypesFile());
-        } else {
-            n = ConfigurationManager.runCommand("javamaker", "-T" + rootModule + ".*", "-nD", "-Gc", "-O",
-                    classesDir, typesFile, "-X" + oooTypesFile, "-X" + ConfigurationManager.getOffapiTypesFile());
-        }
         if (n != 0) {
             throw new CommandLineException("javamaker exits with " + n);
         }
