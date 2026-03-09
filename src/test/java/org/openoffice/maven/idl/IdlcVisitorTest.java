@@ -55,7 +55,7 @@ public class IdlcVisitorTest extends AbstractTest {
                 "src/main/resources/archetype-resources/src/main/idl/hello/WorldInterface.idl");
         assertTrue(idlFile.getAbsoluteFile() + " not found", idlFile.exists());
         visitor.visit(idlFile);
-        File expected = new File(urdDir, "hello/WorldInterface.urd");
+        File expected = new File(urdDir, "hello/types.rdb");
         assertTrue(expected + " does not exist", expected.exists());
     }
 

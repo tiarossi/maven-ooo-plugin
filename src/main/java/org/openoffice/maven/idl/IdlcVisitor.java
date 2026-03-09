@@ -104,19 +104,20 @@ public class IdlcVisitor extends AbstractVisitor {
 
         File outDir = new File(ConfigurationManager.getUrdDir(), idlRelativePath);
         outDir.mkdirs();
-        
+
         File prjIdl = ConfigurationManager.getIdlDir();
 
-        File offapiRdb = new File(ConfigurationManager.getOOo(), "types/offapi.rdb");
-        File udkapiRdb = new File(ConfigurationManager.getOOo(), "types/udkapi.rdb");
+        File offapiRdb = new File(ConfigurationManager.getOffapiTypesFile());
+        File typesRdb = new File(ConfigurationManager.getOOoTypesFile());
         File outputRdb = new File(outDir, "types.rdb");
 
         getLog().debug("output dir: " + outDir);
+        getLog().debug("using types: " + typesRdb);
 
         int n = ConfigurationManager.runCommand(
                 "unoidl-write",
                 offapiRdb.getPath(),
-                udkapiRdb.getPath(),
+                typesRdb.getPath(),
                 prjIdl.getPath(),
                 outputRdb.getPath());
         if (n != 0) {
