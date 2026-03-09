@@ -176,13 +176,15 @@ public class IdlBuilderMojo extends AbstractMojo {
         ConfigurationManager.setLog(this.getLog());
         this.getLog().info("Build id: " + new BuildInfo());
         ooo = ConfigurationManager.initOOo(ooo);
-        this.getLog().info("OpenOffice.org used: " + ooo.getAbsolutePath());
+        this.getLog().info("LibreOffice used: " + ooo.getAbsolutePath());
         sdk = ConfigurationManager.initSdk(sdk);
-        this.getLog().info("OpenOffice.org SDK used: " + sdk.getAbsolutePath());
+        this.getLog().info("LibreOffice SDK used: " + sdk.getAbsolutePath());
         ConfigurationManager.setIdlDir(idlDir);
         this.getLog().info("idlDir used: " + idlDir.getAbsolutePath());
         ConfigurationManager.setOutput(directory);
+        this.getLog().info("output used: " + directory.getAbsolutePath());
         ConfigurationManager.setClassesOutput(outputDirectory);
+        this.getLog().info("classes output used: " + outputDirectory.getAbsolutePath());
     }
 
     /**
@@ -197,6 +199,12 @@ public class IdlBuilderMojo extends AbstractMojo {
         File offapiRdb = new File(ConfigurationManager.getOffapiTypesFile());
         File typesRdb = new File(ConfigurationManager.getOOoTypesFile());
         File outputRdb = new File(ConfigurationManager.getTypesFile());
+
+        // Ensure the output directory exists
+        File outputDir = outputRdb.getParentFile();
+        if (outputDir != null && !outputDir.exists()) {
+            outputDir.mkdirs();
+        }
 
         this.getLog().debug("output file: " + outputRdb);
         this.getLog().debug("using types: " + typesRdb);
