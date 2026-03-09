@@ -44,18 +44,18 @@ public class IdlcVisitorTest extends AbstractTest {
 
     /**
      * Test method for {@link IdlcVisitor#visit(org.openoffice.maven.utils.VisitableFile)}.
-     * We want to test the call of the regmerge command.
-     * 
+     * We want to test the call of the unoidl-write command.
+     *
      * @throws Exception if idlc compiler fails
      */
     @Test
     public void testRunIdlcOnFile() throws Exception {
-        FileUtils.deleteDirectory(urdDir);
         VisitableFile idlFile = new VisitableFile(
                 "src/main/resources/archetype-resources/src/main/idl/hello/WorldInterface.idl");
         assertTrue(idlFile.getAbsoluteFile() + " not found", idlFile.exists());
         visitor.visit(idlFile);
-        File expected = new File(urdDir, "hello/types.rdb");
+        // unoidl-write now generates a single types.rdb in target/
+        File expected = new File(targetDir, "types.rdb");
         assertTrue(expected + " does not exist", expected.exists());
     }
 

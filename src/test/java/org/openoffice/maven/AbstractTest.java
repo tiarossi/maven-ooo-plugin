@@ -35,12 +35,11 @@ import java.io.File;
 public class AbstractTest {
     
     protected static final File targetDir;
-    protected static final File urdDir;
+    
 
     static {
         setUpEnvironment();
         targetDir = ConfigurationManager.getOutput();
-        urdDir = new File(ConfigurationManager.getUrdDir());
     }
 
     public static void setUpEnvironment() {

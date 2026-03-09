@@ -49,7 +49,7 @@ public class ConfigurationManager {
     /**
      * Path to the URD directory in the output directory.
      */
-    private static final String URD_DIR = "urd";
+    //private static final String URD_DIR = "urd";
 
     /**
      * Path to the <code>types.rdb</code> file in the output directory.
@@ -174,12 +174,6 @@ public class ConfigurationManager {
         return sClassesOutput;
     }
 
-    /**
-     * @return the path to the folder where URD files should be generated
-     */
-    public static String getUrdDir() {
-        return new File(sOutput, URD_DIR).getPath();
-    }
 
     /**
      * @return the path to the generated <code>types.rdb</code>.

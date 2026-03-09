@@ -98,27 +98,21 @@ public class IdlcVisitor extends AbstractVisitor {
     private static void runIdlcOnFile(VisitableFile pFile) throws Exception {
 
         getLog().info("Building file: " + pFile.getPath());
-
-        String idlPath = ConfigurationManager.getIdlDir().getAbsolutePath();
-        String idlRelativePath = pFile.getParentFile().getAbsolutePath().substring(idlPath.length());
-
-        File outDir = new File(ConfigurationManager.getUrdDir(), idlRelativePath);
-        outDir.mkdirs();
-
+        
         File prjIdl = ConfigurationManager.getIdlDir();
-
         File offapiRdb = new File(ConfigurationManager.getOffapiTypesFile());
         File typesRdb = new File(ConfigurationManager.getOOoTypesFile());
-        File outputRdb = new File(outDir, "types.rdb");
 
-        getLog().debug("output dir: " + outDir);
+        File outputRdb = new File(ConfigurationManager.getTypesFile());
+
+        getLog().debug("output file: " + outputRdb);
         getLog().debug("using types: " + typesRdb);
 
         int n = ConfigurationManager.runCommand(
                 "unoidl-write",
+                prjIdl.getPath(),
                 offapiRdb.getPath(),
                 typesRdb.getPath(),
-                prjIdl.getPath(),
                 outputRdb.getPath());
         if (n != 0) {
             throw new CommandLineException("unoidl-write exits with " + n);
