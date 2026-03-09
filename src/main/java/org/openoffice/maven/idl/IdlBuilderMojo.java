@@ -164,11 +164,11 @@ public class IdlBuilderMojo extends AbstractMojo {
             // Continue only if there were idl files to build
             if (idlVisitor.hasBuildIdlFile()) {
 
-                this.getLog().info("Merging into types.rdb file");
+                /*this.getLog().info("Merging into types.rdb file");
                 // Merge the URD files into a types.rdb file
                 VisitableFile urdFiles = new VisitableFile(
                        ConfigurationManager.getUrdDir());
-                urdFiles.accept(new RegmergeVisitor());
+                urdFiles.accept(new RegmergeVisitor());*/
 
                 this.getLog().info("Generating classes from the types.rdb file");
                 // Run javamaker against the types.rdb file

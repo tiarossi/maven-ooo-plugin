@@ -24,14 +24,13 @@
 
 package org.openoffice.maven;
 
-import static org.junit.Assert.*;
-
 import java.io.File;
-
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.plexus.util.cli.CommandLineException;
+import static org.junit.Assert.*;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 
@@ -50,11 +49,11 @@ public final class ConfigurationManagerTest extends AbstractTest {
 //     * hardcoded for my MacBook. Better approach would be to use a system
 //     * property.
 //     */
-//    @BeforeClass
-//    public static void setUpBeforeClass() {
-//        ConfigurationManager.setOOo(new File("/opt/ooo/OpenOffice.org.app"));
-//        ConfigurationManager.setSdk(new File("/opt/ooo/OpenOffice.org3.2_SDK"));
-//    }
+    @BeforeClass
+    public static void setUpBeforeClass() {
+        ConfigurationManager.setOOo(new File("C:\\Program Files\\LibreOffice"));
+        ConfigurationManager.setSdk(new File("C:\\libreoffice26.2_sdk\\sdk"));
+    }
 
     /**
      * Test method for {@link org.openoffice.maven.ConfigurationManager#getOOoTypesFile()}.
@@ -123,21 +122,11 @@ public final class ConfigurationManagerTest extends AbstractTest {
      */
     @Test
     public synchronized void testRunIdlcCommand() throws Exception {
-        log.info("running 'idcl -h'...");
-        int ret = ConfigurationManager.runCommand("idlc", "-h");
+        log.info("running 'unoidl-write -h'...");
+        int ret = ConfigurationManager.runCommand("unoidl-write", "-h");
         assertEquals(0, ret);
     }
 
-    /**
-     * Test to see if "regmerge" works.
-     *
-     * @throws CommandLineException the command line exception
-     */
-    @Test
-    public synchronized void testRunRegmerge() throws CommandLineException {
-        log.info("running 'regmerge -h'...");
-        ConfigurationManager.runCommand("regmerge", "-h");
-    }
 
     /**
      * Test method for {@link ConfigurationManager#runCommand(String)} with the

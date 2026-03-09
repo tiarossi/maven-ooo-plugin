@@ -88,7 +88,7 @@ public class IdlcVisitor extends AbstractVisitor {
     }
 
     /**
-     * Executes the <code>idlc</code> tool on the provided IDL file.
+     * Executes the <code>unoidl-write</code> tool on the provided IDL file.
      * 
      * @param pFile
      *            the IDL file to compile
@@ -104,38 +104,23 @@ public class IdlcVisitor extends AbstractVisitor {
 
         File outDir = new File(ConfigurationManager.getUrdDir(), idlRelativePath);
         outDir.mkdirs();
-        File sdkIdl = new File(ConfigurationManager.getSdk(), "idl");
+        
         File prjIdl = ConfigurationManager.getIdlDir();
+
+        File offapiRdb = new File(ConfigurationManager.getOOo(), "types/offapi.rdb");
+        File udkapiRdb = new File(ConfigurationManager.getOOo(), "types/udkapi.rdb");
+        File outputRdb = new File(outDir, "types.rdb");
 
         getLog().debug("output dir: " + outDir);
 
-//        String[] argsParam = { outDir.getPath(), sdkIdl.getPath(), prjIdl.getPath(), pFile.getPath() };
-//
-//        File command = new File("idlc");
-//        String args = "-O \"{0}\" -I \"{1}\" -I \"{2}\" {3}";
-//        args = MessageFormat.format(args, (Object[]) argsParam);
-//        
-//        Process process = ConfigurationManager.runTool(command.getPath(), args);
-//
-//        ErrorReader.readErrors(process.getErrorStream());
-//
-//        String output = "";
-//        BufferedReader buffer = new BufferedReader(new InputStreamReader(process.getInputStream()));
-//        String line = buffer.readLine();
-//        while (null != line) {
-//            output += line + "\n";
-//            line = buffer.readLine();
-//        }
-//        System.out.println("Output: " + output);
-//        int n = process.waitFor();
-//        if (n != 0) {
-//            throw new Exception("'" + command + " " + args + "' exits with " + n);
-//        }
-
-        int n = ConfigurationManager.runCommand("idlc", "-O", outDir.getPath(), "-I", sdkIdl.getPath(), "-I",
-                prjIdl.getPath(), pFile.getPath());
+        int n = ConfigurationManager.runCommand(
+                "unoidl-write",
+                offapiRdb.getPath(),
+                udkapiRdb.getPath(),
+                prjIdl.getPath(),
+                outputRdb.getPath());
         if (n != 0) {
-            throw new CommandLineException("idlc exits with " + n);
+            throw new CommandLineException("unoidl-write exits with " + n);
         }
     }
 }
