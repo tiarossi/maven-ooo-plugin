@@ -110,9 +110,9 @@ public class IdlcVisitor extends AbstractVisitor {
 
         int n = ConfigurationManager.runCommand(
                 "unoidl-write",
-                prjIdl.getPath(),
-                offapiRdb.getPath(),
                 typesRdb.getPath(),
+                offapiRdb.getPath(),
+                prjIdl.getPath(),
                 outputRdb.getPath());
         if (n != 0) {
             throw new CommandLineException("unoidl-write exits with " + n);
