@@ -147,20 +147,16 @@ public class IdlBuilderMojo extends AbstractMojo {
             this.getLog().info("IDL folder used: " + idlDir.getPath());
 
             this.getLog().info("Building IDL files");
-            // Build each IDL file
+            // Check if there are any IDL files to build
             File idl = ConfigurationManager.getIdlDir();
             VisitableFile idlSources = new VisitableFile(idl.getPath());
             IdlcVisitor idlVisitor = new IdlcVisitor();
             idlSources.accept(idlVisitor);
-            
+
             // Continue only if there were idl files to build
             if (idlVisitor.hasBuildIdlFile()) {
-
-                /*this.getLog().info("Merging into types.rdb file");
-                // Merge the URD files into a types.rdb file
-                VisitableFile urdFiles = new VisitableFile(
-                       ConfigurationManager.getUrdDir());
-                urdFiles.accept(new RegmergeVisitor());*/
+                // Run unoidl-write once for the entire IDL directory
+                buildIdlFiles();
 
                 this.getLog().info("Generating classes from the types.rdb file");
                 // Run javamaker against the types.rdb file
@@ -190,8 +186,35 @@ public class IdlBuilderMojo extends AbstractMojo {
     }
 
     /**
+     * Executes the <code>unoidl-write</code> tool on the IDL directory.
+     *
+     * @throws Exception if the IDL compilation fails
+     */
+    private void buildIdlFiles() throws Exception {
+        this.getLog().info("Building IDL directory: " + ConfigurationManager.getIdlDir().getPath());
+
+        File prjIdl = ConfigurationManager.getIdlDir();
+        File offapiRdb = new File(ConfigurationManager.getOffapiTypesFile());
+        File typesRdb = new File(ConfigurationManager.getOOoTypesFile());
+        File outputRdb = new File(ConfigurationManager.getTypesFile());
+
+        this.getLog().debug("output file: " + outputRdb);
+        this.getLog().debug("using types: " + typesRdb);
+
+        int n = ConfigurationManager.runCommand(
+                "unoidl-write",
+                typesRdb.getPath(),
+                offapiRdb.getPath(),
+                prjIdl.getPath(),
+                outputRdb.getPath());
+        if (n != 0) {
+            throw new CommandLineException("unoidl-write exits with " + n);
+        }
+    }
+
+    /**
      * Generates the java classes from the project <code>types.rdb</code>.
-     * 
+     *
      * @throws Exception if anything wrong happens
      * @see {@link "http://wiki.services.openoffice.org/wiki/Documentation/DevGuide/WritingUNO/Generating_Source_Code_from_UNOIDL_Definitions"}
      * @see {@link "http://api.openoffice.org/servlets/ReadMsg?listName=dev&msgNo=19839"}

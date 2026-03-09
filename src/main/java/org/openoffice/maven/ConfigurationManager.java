@@ -47,11 +47,6 @@ public class ConfigurationManager {
     private static Log log = new SystemStreamLog();
 
     /**
-     * Path to the URD directory in the output directory.
-     */
-    //private static final String URD_DIR = "urd";
-
-    /**
      * Path to the <code>types.rdb</code> file in the output directory.
      */
     private static final String TYPES_FILE = "types.rdb";

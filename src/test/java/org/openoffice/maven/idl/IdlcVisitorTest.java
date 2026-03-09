@@ -26,12 +26,8 @@ package org.openoffice.maven.idl;
 
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
-
-import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.openoffice.maven.AbstractTest;
-import org.openoffice.maven.utils.IVisitor;
 import org.openoffice.maven.utils.VisitableFile;
 
 /**
@@ -39,24 +35,21 @@ import org.openoffice.maven.utils.VisitableFile;
  * @since 1.2 (31.07.2010)
  */
 public class IdlcVisitorTest extends AbstractTest {
-    
-    private final IVisitor visitor = new IdlcVisitor();
 
     /**
      * Test method for {@link IdlcVisitor#visit(org.openoffice.maven.utils.VisitableFile)}.
-     * We want to test the call of the unoidl-write command.
+     * We want to test that the visitor correctly identifies IDL files.
      *
-     * @throws Exception if idlc compiler fails
+     * @throws Exception if visitor fails
      */
     @Test
-    public void testRunIdlcOnFile() throws Exception {
+    public void testFindIdlFile() throws Exception {
+        IdlcVisitor visitor = new IdlcVisitor();
         VisitableFile idlFile = new VisitableFile(
                 "src/main/resources/archetype-resources/src/main/idl/hello/WorldInterface.idl");
         assertTrue(idlFile.getAbsoluteFile() + " not found", idlFile.exists());
         visitor.visit(idlFile);
-        // unoidl-write now generates a single types.rdb in target/
-        File expected = new File(targetDir, "types.rdb");
-        assertTrue(expected + " does not exist", expected.exists());
+        assertTrue("IDL file should have been detected", visitor.hasBuildIdlFile());
     }
 
 }

@@ -43,24 +43,20 @@
  ************************************************************************/
 package org.openoffice.maven.idl;
 
-import java.io.File;
-
-import org.codehaus.plexus.util.cli.CommandLineException;
-import org.openoffice.maven.ConfigurationManager;
 import org.openoffice.maven.utils.IVisitable;
 import org.openoffice.maven.utils.VisitableFile;
 
 /**
- * Visits all the IDL files and build them.
- * 
+ * Visits all the IDL files to check if any exist.
+ *
  * @author Cedric Bosdonnat
  */
 public class IdlcVisitor extends AbstractVisitor {
 
     private boolean mFoundIdlFile = false;
-    
+
     /**
-     * @return <code>true</code> if one IDL file have been build,
+     * @return <code>true</code> if at least one IDL file was found,
      *         <code>false</code> otherwise
      */
     public boolean hasBuildIdlFile() {
@@ -76,46 +72,14 @@ public class IdlcVisitor extends AbstractVisitor {
         VisitableFile file = (VisitableFile) pNode;
 
         if (file.isFile() && file.canRead()) {
-            // Try to compile the file if it is an IDL file
+            // Check if it is an IDL file
             if (file.getName().endsWith(".idl")) {
-                runIdlcOnFile(file);
+                getLog().debug("Found IDL file: " + file.getPath());
                 mFoundIdlFile = true;
             }
         } else if (file.isDirectory()) {
             visitChildren = true;
         }
         return visitChildren;
-    }
-
-    /**
-     * Executes the <code>unoidl-write</code> tool on the provided IDL file.
-     * 
-     * @param pFile
-     *            the IDL file to compile
-     * @throws Exception
-     *             if the idl file compilation fails
-     */
-    private static void runIdlcOnFile(VisitableFile pFile) throws Exception {
-
-        getLog().info("Building file: " + pFile.getPath());
-        
-        File prjIdl = ConfigurationManager.getIdlDir();
-        File offapiRdb = new File(ConfigurationManager.getOffapiTypesFile());
-        File typesRdb = new File(ConfigurationManager.getOOoTypesFile());
-
-        File outputRdb = new File(ConfigurationManager.getTypesFile());
-
-        getLog().debug("output file: " + outputRdb);
-        getLog().debug("using types: " + typesRdb);
-
-        int n = ConfigurationManager.runCommand(
-                "unoidl-write",
-                typesRdb.getPath(),
-                offapiRdb.getPath(),
-                prjIdl.getPath(),
-                outputRdb.getPath());
-        if (n != 0) {
-            throw new CommandLineException("unoidl-write exits with " + n);
-        }
     }
 }
