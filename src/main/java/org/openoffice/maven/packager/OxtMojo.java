@@ -32,78 +32,70 @@ import java.util.*;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.util.FileUtils;
 import org.openoffice.maven.ConfigurationManager;
 import org.openoffice.plugin.core.model.UnoPackage;
 
 /**
+ * Packages the OpenOffice.org extension into an .oxt file.
+ *
  * @author Cedric Bosdonnat
- * @goal oxt
- * @phase package
- * @requiresProject
  */
+@Mojo(name = "oxt", defaultPhase = LifecyclePhase.PACKAGE, requiresProject = true)
 public class OxtMojo extends AbstractOxtMojo {
 
     /**
-     * @parameter default-value="${project.attachedArtifacts}
-     * @required
-     * @readonly
+     * List of attached artifacts.
      */
+    @Parameter(defaultValue = "${project.attachedArtifacts}", required = true, readonly = true)
     private List<Artifact> attachedArtifacts;
 
     /**
      * OOo instance to build the extension against.
-     * 
-     * @parameter
      */
+    @Parameter
     private File ooo;
 
     /**
      * OOo SDK installation where the build tools are located.
-     * 
-     * @parameter
      */
+    @Parameter
     private File sdk;
 
     /**
      * OXT directory where the OXT sources can be found
-     * 
-     * @parameter expression="src/main/resources"
      */
+    @Parameter(defaultValue = "src/main/resources")
     private File oxtDir;
 
     /**
-     * Directory containing the jars that shoud be packaged into the lib
+     * Directory containing the jars that should be packaged into the lib
      * directory of the oxt
-     *
-     * @parameter expression="${project.build.directory}/lib"
      */
+    @Parameter(defaultValue = "${project.build.directory}/lib")
     private File libDir;
 
     /**
      * This is where build results go.
-     * 
-     * @parameter expression="${project.build.directory}"
-     * @required
-     * @readonly
      */
+    @Parameter(defaultValue = "${project.build.directory}", required = true, readonly = true)
     private File directory;
 
     /**
      * Directory containing the classes and resource files that should be
      * packaged into the JAR.
-     * 
-     * @parameter expression="${project.build.outputDirectory}"
-     * @required
      */
+    @Parameter(defaultValue = "${project.build.outputDirectory}", required = true)
     private File classesDirectory;
 
     /**
      * Classifier to add to the artifact generated. If given, the artifact will
      * be an attachment instead.
-     * 
-     * @parameter
      */
+    @Parameter
     private String classifier;
 
     @Override

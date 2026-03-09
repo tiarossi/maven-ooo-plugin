@@ -57,7 +57,7 @@ public final class Environment {
     /** Utility class - no need to instantiate it. */
     private Environment() {}
     
-    private static final Log getLog() {
+    private static Log getLog() {
         return ConfigurationManager.getLog();
     }
     

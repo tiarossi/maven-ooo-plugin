@@ -20,8 +20,8 @@
       </plugin>
       <plugin>
         <groupId>org.openoffice.dev</groupId>
-        <artifactId>maven-ooo-plugin</artifactId>
-        <version>1.0</version>
+        <artifactId>ooo-maven-plugin</artifactId>
+        <version>1.2.0-SNAPSHOT</version>
         <!-- 
             the following values can be configured:
             ooo:    OpenOffice dir

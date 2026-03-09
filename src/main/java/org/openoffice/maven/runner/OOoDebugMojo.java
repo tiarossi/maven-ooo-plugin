@@ -9,43 +9,43 @@ import java.io.File;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Execute;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.openoffice.maven.ConfigurationManager;
 
 /**
+ * Runs OpenOffice.org in debug mode.
  *
  * @author Tiago Drummond de Figueiredo Rossi <tiago.rossi@gmail.com>
- * @goal debug
- * @execute phase=install
- * @requiresDirectInvocation
  */
+@Mojo(name = "debug", requiresDirectInvocation = true)
+@Execute(phase = LifecyclePhase.INSTALL)
 public class OOoDebugMojo extends AbstractMojo {
 
     /**
      * OOo instance to build the extension against.
-     *
-     * @parameter
      */
+    @Parameter
     private File ooo;
 
     /**
      * OOo SDK installation where the build tools are located.
-     *
-     * @parameter
      */
+    @Parameter
     private File sdk;
 
     /**
-     * User Directoty for debuging
-     *
-     * @parameter default-value="${project.build.directory}/soffice_debug"
+     * User Directory for debugging
      */
+    @Parameter(defaultValue = "${project.build.directory}/soffice_debug")
     private File userInstallation;
 
     /**
      * Debug jpda configuration
-     *
-     * @parameter default-value="${jpda.address}"
      */
+    @Parameter(property = "jpda.address")
     private String sJpdaAddress;
 
     /**

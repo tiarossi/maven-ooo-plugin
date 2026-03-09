@@ -45,7 +45,6 @@ public abstract class AbstractMojoTest extends AbstractMojoTestCase {
             project.setArtifact(artifact);
             project.setGroupId(TEST_GROUP_ID);
             project.setArtifactId(TEST_ARTIFACT_ID);
-            project.setBasedir(baseDir);
             project.setFile(pomFile);
             setVariableValueToObject(mojo, "project", project);
         } catch (Exception e) {

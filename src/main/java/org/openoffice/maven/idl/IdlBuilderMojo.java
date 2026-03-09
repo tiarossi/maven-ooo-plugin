@@ -49,6 +49,9 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.*;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.openoffice.maven.BuildInfo;
 import org.openoffice.maven.ConfigurationManager;
@@ -57,12 +60,10 @@ import org.openoffice.maven.utils.VisitableFile;
 
 /**
  * Runs the OOo SDK tools to generate the classes file from the IDL files.
- * 
- * @goal build-idl
- * @phase generate-sources
- * 
+ *
  * @author Cedric Bosdonnat
  */
+@Mojo(name = "build-idl", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
 public class IdlBuilderMojo extends AbstractMojo {
     
     /**
@@ -83,44 +84,35 @@ public class IdlBuilderMojo extends AbstractMojo {
     }
 
     private static final String IDENTIFIER_REGEX = "[_a-zA-Z0-9]+";
-    
+
     /**
      * This is where build results go.
-     *
-     * @parameter expression="${project.build.directory}"
-     * @required
-     * @readonly
      */
+    @Parameter(defaultValue = "${project.build.directory}", required = true, readonly = true)
     private File directory;
 
     /**
      * This is where compiled classes go.
-     *
-     * @parameter expression="${project.build.outputDirectory}"
-     * @required
-     * @readonly
      */
+    @Parameter(defaultValue = "${project.build.outputDirectory}", required = true, readonly = true)
     private File outputDirectory;
 
     /**
      * OOo instance to build the extension against.
-     * 
-     * @parameter
      */
+    @Parameter
     private File ooo;
 
     /**
      * OOo SDK installation where the build tools are located.
-     * 
-     * @parameter
      */
+    @Parameter
     private File sdk;
-    
+
     /**
      * IDL directory where the IDL sources can be found
-     * 
-     * @parameter expression="src/main/resources"
      */
+    @Parameter(defaultValue = "src/main/resources")
     private File idlDir;
 
     /**

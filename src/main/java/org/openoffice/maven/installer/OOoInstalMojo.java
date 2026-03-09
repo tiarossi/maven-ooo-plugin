@@ -3,51 +3,48 @@ package org.openoffice.maven.installer;
 import java.io.File;
 
 import org.apache.maven.plugin.*;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.openoffice.maven.ConfigurationManager;
 
 /**
+ * Installs the OpenOffice.org extension.
+ *
  * @author Frederic Morin <frederic.morin.8@gmail.com>
- * @goal install
- * @phase install
  */
+@Mojo(name = "install", defaultPhase = LifecyclePhase.INSTALL)
 public class OOoInstalMojo extends AbstractMojo {
 
     /**
      * The Maven project.
-     *
-     * @parameter expression="${project}"
-     * @required
-     * @readonly
      */
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
     /**
      * OOo instance to build the extension against.
-     *
-     * @parameter
      */
+    @Parameter
     private File ooo;
 
     /**
      * OOo SDK installation where the build tools are located.
-     *
-     * @parameter
      */
+    @Parameter
     private File sdk;
 
     /**
-     * User Directoty for running
-     *
-     * @parameter default-value="${project.build.directory}/soffice_debug"
+     * User Directory for running
      */
+    @Parameter(defaultValue = "${project.build.directory}/soffice_debug")
     private File userInstallation;
 
     /**
      * Should plugin display Extension Manager Graphical User Interface or not
-     *
-     * @parameter default-value=false
      */
+    @Parameter(defaultValue = "false")
     private Boolean showGui;
 
     public Boolean getShowGui() {
