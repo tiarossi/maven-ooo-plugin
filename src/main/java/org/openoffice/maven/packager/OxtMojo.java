@@ -56,26 +56,26 @@ public class OxtMojo extends AbstractOxtMojo {
     /**
      * OOo instance to build the extension against.
      */
-    @Parameter
+    @Parameter(property = "ooo")
     private File ooo;
 
     /**
      * OOo SDK installation where the build tools are located.
      */
-    @Parameter
+    @Parameter(property = "sdk")
     private File sdk;
 
     /**
      * OXT directory where the OXT sources can be found
      */
-    @Parameter(defaultValue = "src/main/resources")
+    @Parameter(property = "oxtDir", defaultValue = "src/main/resources")
     private File oxtDir;
 
     /**
      * Directory containing the jars that should be packaged into the lib
      * directory of the oxt
      */
-    @Parameter(defaultValue = "${project.build.directory}/lib")
+    @Parameter(property = "libDir", defaultValue = "${project.build.directory}/lib")
     private File libDir;
 
     /**

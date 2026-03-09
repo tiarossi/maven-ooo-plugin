@@ -27,19 +27,19 @@ public class OOoDebugMojo extends AbstractMojo {
     /**
      * OOo instance to build the extension against.
      */
-    @Parameter
+    @Parameter(property = "ooo")
     private File ooo;
 
     /**
      * OOo SDK installation where the build tools are located.
      */
-    @Parameter
+    @Parameter(property = "sdk")
     private File sdk;
 
     /**
      * User Directory for debugging
      */
-    @Parameter(defaultValue = "${project.build.directory}/soffice_debug")
+    @Parameter(property = "userInstallation", defaultValue = "${project.build.directory}/soffice_debug")
     private File userInstallation;
 
     /**

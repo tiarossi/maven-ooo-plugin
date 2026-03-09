@@ -34,13 +34,13 @@ public class OOoUninstalMojo extends AbstractMojo {
     /**
      * OOo instance to build the extension against.
      */
-    @Parameter
+    @Parameter(property = "ooo")
     private File ooo;
 
     /**
      * OOo SDK installation where the build tools are located.
      */
-    @Parameter
+    @Parameter(property = "sdk")
     private File sdk;
 
     /**

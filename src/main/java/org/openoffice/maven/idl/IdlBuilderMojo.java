@@ -100,19 +100,19 @@ public class IdlBuilderMojo extends AbstractMojo {
     /**
      * OOo instance to build the extension against.
      */
-    @Parameter
+    @Parameter(property = "ooo")
     private File ooo;
 
     /**
      * OOo SDK installation where the build tools are located.
      */
-    @Parameter
+    @Parameter(property = "sdk")
     private File sdk;
 
     /**
      * IDL directory where the IDL sources can be found
      */
-    @Parameter(defaultValue = "src/main/resources")
+    @Parameter(property = "idlDir", defaultValue = "src/main/resources")
     private File idlDir;
 
     /**
