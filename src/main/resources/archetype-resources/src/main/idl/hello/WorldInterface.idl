@@ -1,10 +1,7 @@
-#ifndef __hello_WorldInterface_idl__
-#define __hello_WorldInterface_idl__
-module hello {    
-
-    interface WorldInterface {
-		void print();
+module hello
+{
+    interface WorldInterface : com::sun::star::uno::XInterface
+    {
+        void print();
     };
-
 };
-#endif
