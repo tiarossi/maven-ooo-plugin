@@ -9,14 +9,14 @@
           <lifecycle>
             <id>default</id>
             <phases>
-              <generate-sources>org.openoffice.dev:maven-ooo-plugin:build-idl</generate-sources>
+              <generate-sources>org.openoffice.dev:ooo-maven-plugin:build-idl</generate-sources>
               <process-resources>org.apache.maven.plugins:maven-resources-plugin:resources</process-resources>
               <compile>org.apache.maven.plugins:maven-compiler-plugin:compile</compile>
               <process-test-resources>org.apache.maven.plugins:maven-resources-plugin:testResources</process-test-resources>
               <test-compile>org.apache.maven.plugins:maven-compiler-plugin:testCompile</test-compile>
               <test>org.apache.maven.plugins:maven-surefire-plugin:test</test>
-              <package>org.openoffice.dev:maven-ooo-plugin:oxt</package>
-              <install>org.openoffice.dev:maven-ooo-plugin:install</install>
+              <package>org.openoffice.dev:ooo-maven-plugin:oxt</package>
+              <install>org.openoffice.dev:ooo-maven-plugin:install</install>
             </phases>
           </lifecycle>
         </lifecycles>
