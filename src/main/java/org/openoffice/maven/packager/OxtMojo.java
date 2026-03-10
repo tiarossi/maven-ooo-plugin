@@ -161,6 +161,18 @@ public class OxtMojo extends AbstractOxtMojo {
         }
 
         pkg.addDirectory(oxtDir, this.getIncludes(), this.getExcludes());
+
+        //Add types.rdb to the oxt file if it exists
+        File typesRdb = new File(directory, "types.rdb");
+        if (typesRdb.exists()) {
+            try {
+                pkg.addFile("types.rdb", typesRdb);
+                getLog().info("Added types.rdb to OXT package");
+            } catch (Exception e) {
+                getLog().warn("Failed to add types.rdb: " + e.getMessage());
+            }
+        }
+
         //Add libraries to the oxt file
         if (libDir != null && libDir.isDirectory()) {
             for (File child : libDir.listFiles()) {
