@@ -76,12 +76,21 @@ public class OOoDebugMojo extends AbstractMojo {
                 executable = "soffice.exe";
             }
 
+            // Create user installation directory if it doesn't exist
+            if (!userInstallation.exists()) {
+                userInstallation.mkdirs();
+            }
+
+            // Build the user installation parameter
+            String userInstallParam = "-env:UserInstallation=file:///" +
+                userInstallation.getAbsolutePath().replace("\\", "/");
+
             getLog().info("Debugging OOo... please wait");
-            int returnCode = ConfigurationManager.runCommand(executable, "--nofirststartwizard");
+            int returnCode = ConfigurationManager.runCommand(executable, userInstallParam, "--nofirststartwizard");
             if (returnCode == 0) {
-                getLog().info("Debbug successfully");
+                getLog().info("Debug successfully");
             } else {
-                throw new MojoExecutionException("'soffice --nofirststartwizard' returned with " + returnCode);
+                throw new MojoExecutionException("'soffice " + userInstallParam + " --nofirststartwizard' returned with " + returnCode);
             }
         } catch (Exception e) {
             throw new MojoExecutionException("Error while debugging OOo.", e);
